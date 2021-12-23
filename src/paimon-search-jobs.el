@@ -1,0 +1,255 @@
+;;; paimon-search-jobs.el --- Search job list-*- lexical-binding: t -*-
+
+;; Copyright (C) 2022  r0man
+
+;; Author: r0man <roman@burningswell.com>
+;; Maintainer: r0man <roman@burningswell.com>
+;; SPDX-License-Identifier: GPL-3.0-or-later
+
+;; This file is not part of GNU Emacs.
+
+;;; Commentary:
+
+;; Search job list
+
+;;; Code:
+
+(require 'aio)
+(require 'cl-lib)
+(require 'eieio)
+(require 'ht)
+(require 's)
+(require 'seq)
+(require 'paimon-api)
+(require 'paimon-db)
+(require 'paimon-search-job)
+(require 'paimon-search-results)
+(require 'paimon-util)
+(require 'subr-x)
+(require 'tabulated-list)
+
+(defvar-local paimon-search-jobs-profile nil
+  "The profile used for the search job.")
+
+(put 'paimon-search-jobs-profile 'permanent-local t)
+
+(defvar paimon-search-jobs-list-format
+  [("Created At" 20 t)
+   ("Earliest Time" 20 t)
+   ("Latest Time" 20 t)
+   ("State" 10 t)
+   ("Events" 10 t)
+   ("Search" 37 t)]
+  "The `tabulated-list-mode' format of the search jobs buffer.")
+
+(defcustom paimon-search-jobs-buffer-name
+  "*paimon-search-jobs*"
+  "The search jobs buffer name."
+  :group 'paimon
+  :safe #'stringp
+  :type 'string)
+
+(defcustom paimon-search-jobs-list-sort-key
+  '("Created At" . t)
+  "Sort the search jobs on this key."
+  :group 'paimon
+  :safe #'listp
+  :type 'list)
+
+(defun paimon--trim-search-term (s)
+  "Trim the search term from S."
+  (when s (s-replace "search " "" s)))
+
+(defun paimon-search-jobs-list-entry-search (job)
+  "Return the tabulated list entry search for JOB."
+  (paimon--trim-search-term (paimon-search-job-search job)))
+
+(defun paimon-search-jobs-list-entry-dispatch-state (job)
+  "Return the tabulated list entry dispatch state for JOB."
+  (or (paimon-search-job-dispatch-state job)
+      (if (oref job id) "CREATED" "CREATING")))
+
+(defun paimon-search-jobs-list-entry-event-count (job)
+  "Return the tabulated list entry event count for JOB."
+  (number-to-string (or (paimon-search-job-event-count job) 0)))
+
+(defun paimon-search-jobs-list-entry-created-at (job)
+  "Return the tabulated list entry published at time for JOB."
+  (paimon--format-time-human (paimon-search-job-created-at job)))
+
+(defun paimon-search-jobs-list-entry-earliest-time (job)
+  "Return the tabulated list entry earliest time for JOB."
+  (or (paimon--format-time-human (paimon-search-job-earliest-time job)) ""))
+
+(defun paimon-search-jobs-list-entry-latest-time (job)
+  "Return the tabulated list entry latest time for JOB."
+  (or (paimon--format-time-human (paimon-search-job-latest-time job)) ""))
+
+(defun paimon-search-jobs-list-entry (job)
+  "Convert the search JOB into a tabulated list entry."
+  (list (paimon-search-job-id job)
+        (vector (paimon-search-jobs-list-entry-created-at job)
+                (paimon-search-jobs-list-entry-earliest-time job)
+                (paimon-search-jobs-list-entry-latest-time job)
+                (paimon-search-jobs-list-entry-dispatch-state job)
+                (paimon-search-jobs-list-entry-event-count job)
+                (paimon-search-jobs-list-entry-search job))))
+
+(defun paimon-search-jobs-list-entries ()
+  "Return the search job list entries."
+  (when-let (profile paimon-search-jobs-profile)
+    (when-let (jobs (paimon-search-jobs-by-profile (paimon-db) profile))
+      (seq-map #'paimon-search-jobs-list-entry jobs))))
+
+(defun paimon-search-jobs-render (&optional remember-pos update)
+  "Render the search list entries using REMEMBER-POS and UPDATE."
+  (interactive)
+  (with-current-buffer (get-buffer-create paimon-search-jobs-buffer-name)
+    (tabulated-list-print remember-pos update)))
+
+(defvar paimon-search-jobs--lifecycle-registry (ht-create)
+  "The search job lifecycle handlers.")
+
+(defun paimon-search-jobs--lifecycle-registered-p (job)
+  "Return t when there is a life cycle handler for JOB registered, otherwise nil."
+  (not (null (ht-get paimon-search-jobs--lifecycle-registry (oref job id)))))
+
+(defun paimon-search-jobs--refresh-results (job)
+  "Refresh the results of the search JOB."
+  (when-let (buffer (get-buffer (paimon-search-job-buffer-name job)))
+    (with-current-buffer buffer
+      (setq-local paimon-search-results-job job)
+      (paimon-search-results-mode))))
+
+(aio-defun paimon-search-jobs--manage-lifecycle-run (job)
+  "Start the life-cycle update loop for the search JOB."
+  (with-slots (id) job
+    (condition-case error
+        (when (paimon-search-job-refresh-p job)
+          (message "Starting job %s lifcycle ..." (paimon--bold id))
+          (while (when-let (job (aio-await (paimon-search-job-update job)))
+                   (paimon-search-jobs-render t)
+                   (pcase (paimon-search-job-dispatch-state job)
+                     ("DONE"
+                      (aio-await (paimon-search-job-load-results job))
+                      (paimon-search-jobs--refresh-results job)
+                      (message "Search job %s done." (paimon--bold id))
+                      nil)
+                     ("FAILED"
+                      (message "Search job %s failed." (paimon--bold id))
+                      nil)
+                     ("RUNNING"
+                      (when-let (results (aio-await (paimon-search-job-load-results-preview job)))
+                        (paimon-search-jobs--refresh-results job)
+                        (message "Loaded %s preview search results for job %s."
+                                 (paimon--bold (length results)) (paimon--bold id)))
+                      (aio-await (aio-sleep 1))
+                      t)
+                     (_
+                      (aio-await (aio-sleep 1))
+                      t))))
+          (message "Search job %s lifcycle done." (paimon--bold id))
+          job)
+      (error (message "Search job %s lifecycle handler died: %s %s" id (car error) (cdr error))))))
+
+(defun paimon-search-jobs--manage-lifecycle (job)
+  "Start the life-cycle update loop for the search JOB."
+  (with-slots (id) job
+    (let ((promise (paimon-search-jobs--manage-lifecycle-run job)))
+      (ht-set paimon-search-jobs--lifecycle-registry id promise)
+      promise)))
+
+(defun paimon-search-jobs--manage-lifecycle-p (job)
+  "Return t if the life cycle of the search JOB needs to be managed, otherwise nil."
+  (and (paimon-search-job-refresh-p job)
+       (not (paimon-search-jobs--lifecycle-registered-p job))))
+
+(defun paimon-search-jobs--manage-lifecycles (jobs)
+  "Manage the life cycle of the search JOBS."
+  (thread-last jobs
+    (seq-filter #'paimon-search-jobs--manage-lifecycle-p)
+    (seq-map #'paimon-search-jobs--manage-lifecycle)))
+
+(aio-defun paimon-search-jobs--apply-action (job action doing done)
+  "Apply the search JOB ACTION and display the DOING and DONE messages."
+  (when (and job (not (paimon-search-job-expired-p job)))
+    (let ((id (paimon--bold (oref job id))))
+      (when doing (message "%s search job %s ..." doing id))
+      (aio-await (paimon-search-job-apply-action job action))
+      (paimon-search-jobs-render t t)
+      (when done (message "Search job %s %s." id done)))))
+
+(defun paimon-search-jobs-browse (job)
+  "Browse the search JOB under point on the web."
+  (interactive (list (paimon-search-job-under-point)))
+  (when (and job (not (paimon-search-job-expired-p job)))
+    (browse-url (paimon-api-job-url (paimon-api-for job) (oref job sid)))))
+
+(defun paimon-search-jobs-cancel (job)
+  "Cancel the search JOB under point."
+  (interactive (list (paimon-search-job-under-point)))
+  (paimon-search-jobs--apply-action job "cancel" "Canceling" "canceled"))
+
+(defun paimon-search-jobs-delete (job)
+  "Delete the search JOB."
+  (interactive (list (paimon-search-job-under-point)))
+  (when job
+    (paimon-search-job-delete job)
+    (paimon-search-jobs-render t)))
+
+(defun paimon-search-jobs-finalize (job)
+  "Finalize the search JOB under point."
+  (interactive (list (paimon-search-job-under-point)))
+  (paimon-search-jobs--apply-action job "finalize" "Finalizing" "finalized"))
+
+(defun paimon-search-jobs-pause (job)
+  "Pause the search JOB under point."
+  (interactive (list (paimon-search-job-under-point)))
+  (paimon-search-jobs--apply-action job "pause" "Pausing" "paused"))
+
+(defun paimon-search-jobs-unpause (job)
+  "Un-pause the search JOB under point."
+  (interactive (list (paimon-search-job-under-point)))
+  (paimon-search-jobs--apply-action job "unpause" "Unpausing" "unpaused"))
+
+(defvar paimon-search-jobs-mode-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map (kbd "C") 'paimon-search-jobs-cancel)
+    (define-key map (kbd "C-c C-o") 'paimon-search-jobs-browse)
+    (define-key map (kbd "C-c C-w") 'paimon-search-jobs-browse)
+    (define-key map (kbd "D") 'paimon-search-jobs-delete)
+    (define-key map (kbd "F") 'paimon-search-jobs-finalize)
+    (define-key map (kbd "P") 'paimon-search-jobs-pause)
+    (define-key map (kbd "RET") 'paimon-search-results-show)
+    (define-key map (kbd "U") 'paimon-search-jobs-unpause)
+    (define-key map (kbd "c") 'paimon-search)
+    (define-key map (kbd "w") 'paimon-profiles-list)
+    map)
+  "The key map for the `paimon-search-jobs-mode'.")
+
+(define-derived-mode paimon-search-jobs-mode tabulated-list-mode "Search Jobs"
+  "Special mode for search jobs buffers."
+  (setq major-mode 'paimon-search-jobs-mode)
+  (setq mode-name "Search Jobs")
+  (setq tabulated-list-entries #'paimon-search-jobs-list-entries)
+  (setq tabulated-list-format paimon-search-jobs-list-format)
+  (setq tabulated-list-sort-key paimon-search-jobs-list-sort-key)
+  (use-local-map paimon-search-jobs-mode-map)
+  (tabulated-list-init-header)
+  (tabulated-list-print)
+  (hl-line-mode 1)
+  (run-mode-hooks 'paimon-search-jobs-mode-hook)
+  (paimon-search-jobs--manage-lifecycles (paimon-search-jobs (paimon-db))))
+
+(defun paimon-search-jobs-list (profile)
+  "List the search jobs for PROFILE."
+  (interactive (list (paimon-profile-current)))
+  (let ((buffer (get-buffer-create paimon-search-jobs-buffer-name)))
+    (with-current-buffer buffer
+      (switch-to-buffer buffer)
+      (setq-local paimon-search-jobs-profile profile)
+      (paimon-search-jobs-mode))))
+
+(provide 'paimon-search-jobs)
+
+;;; paimon-search-jobs.el ends here
