@@ -1,6 +1,6 @@
 * paimon.el [[https://github.com/r0man/splunk.el/actions?query=workflow%3ACI][https://github.com/r0man/paimon.el/workflows/CI/badge.svg]]
 
-An Emacs mode for [[http://splunk.org/][Splunk]].
+An Emacs mode for [[https://www.splunk.com/][Splunk]].
 
 [[doc/logo.png]]
 
