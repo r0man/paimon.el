@@ -152,11 +152,11 @@
   "Return the API for OBJECT.")
 
 (defun paimon-api-basic-auth-encode (username password)
-  "Encode USERNAME and PASSWORD according to the HTTP basic auth scheme."
+  "Encode USERNAME and PASSWORD according to the HTTP basic authentication scheme."
   (base64-encode-string (format "%s:%s" username password)))
 
 (defun paimon-api-secret (identity hostname port)
-  "Find the secret for IDENTITY, HOSTNAME and PORT in auth sources."
+  "Find the secret for IDENTITY, HOSTNAME and PORT."
   (let ((port (when port (number-to-string port))))
     (auth-source-pick-first-password :host hostname :max-tokens 1 :port port :user identity)))
 
