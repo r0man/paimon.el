@@ -51,6 +51,9 @@ jobs:
 
     - uses: actions/checkout@v2
 
+    - name: Install packages
+      run: sudo apt-get install aspell aspell-en
+
     - name: Initialize sandbox
       run: |
         SANDBOX_DIR=$(mktemp -d) || exit 1
