@@ -85,15 +85,21 @@
   "Return the tabulated list entry latest time for JOB."
   (or (paimon--format-time-human (paimon-search-job-latest-time job)) ""))
 
+(defun paimon-search-jobs-list--apply-face (job s)
+  "Apply a face to S depending on the JOB status."
+  (when s (propertize s 'font-lock-face (paimon-search-job-font-lock-face job))))
+
 (defun paimon-search-jobs-list-entry (job)
   "Convert the search JOB into a tabulated list entry."
   (list (paimon-search-job-id job)
-        (vector (paimon-search-jobs-list-entry-created-at job)
-                (paimon-search-jobs-list-entry-earliest-time job)
-                (paimon-search-jobs-list-entry-latest-time job)
-                (paimon-search-jobs-list-entry-dispatch-state job)
-                (paimon-search-jobs-list-entry-event-count job)
-                (paimon-search-jobs-list-entry-search job))))
+        (thread-last (list (paimon-search-jobs-list-entry-created-at job)
+                           (paimon-search-jobs-list-entry-earliest-time job)
+                           (paimon-search-jobs-list-entry-latest-time job)
+                           (paimon-search-jobs-list-entry-dispatch-state job)
+                           (paimon-search-jobs-list-entry-event-count job)
+                           (paimon-search-jobs-list-entry-search job))
+          (seq-map (lambda (s) (paimon-search-jobs-list--apply-face job s)))
+          (apply #'vector ))))
 
 (defun paimon-search-jobs-list-entries ()
   "Return the search job list entries."

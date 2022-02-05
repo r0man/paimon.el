@@ -115,6 +115,19 @@
   "Delete the search JOB from the database."
   (closql-delete job))
 
+(defun paimon-search-job-font-lock-face (job)
+  "Return the face of the search JOB."
+  (let ((status (paimon-search-job-dispatch-state job)))
+    (cond
+     ((paimon-search-job-expired-p job)
+      'breakpoint-disabled)
+     ((member status '(nil "NONE" "QUEUED" "PARSING" "CREATED" "RUNNING" "FINALIZING"))
+      'font-lock-keyword-face)
+     ((equal "PAUSED" status)
+      'font-lock-regexp-grouping-backslash)
+     ((equal "FAILED" status)
+      'font-lock-warning-face))))
+
 (defun paimon-search-job-field-names (job)
   "Return the names of the search JOB fields."
   (with-slots (fields) job
