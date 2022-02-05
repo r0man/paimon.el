@@ -101,7 +101,7 @@
 (defun paimon-search-results-by-job (job &optional offset limit)
   "Return the search results of the search JOB using OFFSET and LIMIT."
   (seq-map (lambda (row) (closql--remake-instance 'paimon-search-result (paimon-db) row))
-           (paimon-db-sql [:select [*] :from search-result :where (= job-id $s1) :limit $s2 :offset $s3]
+           (paimon-db-sql [:select [*] :from search-result :where (= job-id $s1) :order-by [(asc offset)] :limit $s2 :offset $s3]
                           (oref job id)
                           (or limit paimon-search-results-limit)
                           (or offset paimon-search-results-offset))))

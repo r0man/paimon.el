@@ -66,9 +66,7 @@
         (apply #'vector)))))
 
 (cl-defmethod paimon-search-results-layout-sort-key (job (layout paimon-search-results-layout))
-  "Return the tabulated-list sort key of the JOB using LAYOUT."
-  (when-let (field (seq-first (paimon-search-results-layout-format job layout)))
-    (cons (seq-first field) t)))
+  "Return the tabulated-list sort key of the JOB using LAYOUT." nil)
 
 (defun paimon-search-results-layout-completing-read (job)
   "Completing read a search result layout for the search JOB."
