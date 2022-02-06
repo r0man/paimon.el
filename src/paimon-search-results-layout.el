@@ -100,7 +100,7 @@
                     (path (seq-into (plist-get options :data) 'list)))
                (lambda (result)
                  (with-slots (data) result
-                   (format "%s" (or (apply #'ht-get* data path) ""))))))
+                   (s-trim (format "%s" (or (apply #'ht-get* data path) "")))))))
            (paimon-search-results-layout-format job layout)))
 
 (defun paimon-search-results-layout--supported-p (job layout)
