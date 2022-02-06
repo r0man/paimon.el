@@ -181,7 +181,10 @@
 (defun paimon-api-authorization-tokens-url (api)
   "Return the Splunk API authorization tokens URL."
   (with-slots (hostname port protocol) api
-    (concat protocol "://" hostname "/en-US/manager/launcher/authorization/tokens")))
+    (let ((local-p (equal "localhost" hostname)))
+      (concat (if local-p "http" protocol) "://" hostname
+              (when local-p (concat ":8000"))
+              "/en-US/manager/launcher/authorization/tokens"))))
 
 (defun paimon-api-job-url (api id)
   "Return the URL for the search job ID using API."

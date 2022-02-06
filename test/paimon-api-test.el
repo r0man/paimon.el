@@ -34,8 +34,10 @@
                     (paimon-api :auth-type "bearer" :identity "admin" :hostname "localhost"))))))
 
 (ert-deftest paimon-api-authorization-tokens-url-test ()
-  (should (equal "https://localhost/en-US/manager/launcher/authorization/tokens"
-                 (paimon-api-authorization-tokens-url paimon-test-api))))
+  (should (equal "https://localhost:8080/en-US/manager/launcher/authorization/tokens"
+                 (paimon-api-authorization-tokens-url paimon-test-api)))
+  (should (equal "https://example.com/en-US/manager/launcher/authorization/tokens"
+                 (paimon-api-authorization-tokens-url (paimon-api :hostname "example.com")))))
 
 (ert-deftest paimon-api-data-indexes-test ()
   (paimon-test-with-auth-info paimon-test-auth-info
