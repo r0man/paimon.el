@@ -199,7 +199,7 @@
 (aio-defun paimon-search-job-create (job)
   "Create the search JOB asynchronously."
   (with-slots (earliest-time latest-time search search-level sid status-buckets) job
-    (let ((response (aio-await (paimon-api-create-search-job
+    (let ((response (aio-await (paimon-api-search-job-create
                                 (paimon-api-for job) search
                                 :earliest-time (paimon--format-time earliest-time)
                                 :latest-time (paimon--format-time latest-time)

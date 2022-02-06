@@ -81,6 +81,13 @@
                    (buffer-substring-no-properties (region-beginning) (region-end))
                  (thing-at-point 'line t))))
 
+(defun paimon--transient-arg-multi-value (arg args)
+  "Return the value of the multi value ARG as it appears in ARGS."
+  (thread-last args
+    (seq-filter (lambda (x) (and (listp x) (equal arg (car x)))))
+    (seq-first)
+    (seq-rest)))
+
 (defun paimon-with-errors--api-error (api-error)
   "Handle the API-ERROR."
   (let ((response (cdr api-error)))

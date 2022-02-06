@@ -37,6 +37,23 @@
   (should (equal "https://localhost/en-US/manager/launcher/authorization/tokens"
                  (paimon-api-authorization-tokens-url paimon-test-api))))
 
+(ert-deftest paimon-api-data-indexes-test ()
+  (paimon-test-with-auth-info paimon-test-auth-info
+    (let ((response (aio-wait-for (paimon-api-data-indexes paimon-test-api))))
+      (should (equal 200 (plist-get response :status)))
+      (should (hash-table-p (plist-get response :body)))
+      (should (equal '("_audit"
+                       "_internal"
+                       "_introspection"
+                       "_telemetry"
+                       "_thefishbucket"
+                       "history"
+                       "main"
+                       "splunklogger"
+                       "summary")
+                     (seq-map (lambda (data) (ht-get data "name"))
+                              (ht-get (plist-get response :body) "entry")))))))
+
 (ert-deftest paimon-api-headers-test ()
   (paimon-test-with-auth-info paimon-test-auth-info
     (should (equal '(("Authorization" . "Basic YWRtaW46MTIzNDU2Nzg="))
@@ -55,15 +72,15 @@
   (should (equal "https://localhost:8089/services/search/jobs"
                  (paimon-api-url paimon-test-api "services/search/jobs"))))
 
-(ert-deftest paimon-api-create-search-job-test ()
+(ert-deftest paimon-api-search-job-create-test ()
   (paimon-test-with-auth-info paimon-test-auth-info
-    (let ((response (aio-wait-for (paimon-api-create-search-job paimon-test-api "search"))))
+    (let ((response (aio-wait-for (paimon-api-search-job-create paimon-test-api "search"))))
       (should (equal 201 (plist-get response :status)))
       (should (hash-table-p (plist-get response :body)))
       (should (stringp (ht-get (plist-get response :body) "sid"))))))
 
 (ert-deftest paimon-api-search-job-test ()
-  (let ((response (aio-wait-for (paimon-api-create-search-job paimon-test-api "search"))))
+  (let ((response (aio-wait-for (paimon-api-search-job-create paimon-test-api "search"))))
     (should (equal 201 (plist-get response :status)))
     (should (hash-table-p (plist-get response :body)))
     (let ((response (aio-wait-for (paimon-api-search-job paimon-test-api (ht-get (plist-get response :body) "sid")))))
@@ -72,7 +89,7 @@
 
 (ert-deftest paimon-api-search-job-results-test ()
   (paimon-test-with-auth-info paimon-test-auth-info
-    (let ((response (aio-wait-for (paimon-api-create-search-job paimon-test-api "search"))))
+    (let ((response (aio-wait-for (paimon-api-search-job-create paimon-test-api "search"))))
       (should (equal 201 (plist-get response :status)))
       (should (hash-table-p (plist-get response :body)))
       (let ((job (plist-get response :body)))
@@ -83,7 +100,7 @@
 
 (ert-deftest paimon-api-search-job-preview-results-test ()
   (paimon-test-with-auth-info paimon-test-auth-info
-    (let ((response (aio-wait-for (paimon-api-create-search-job paimon-test-api "search"))))
+    (let ((response (aio-wait-for (paimon-api-search-job-create paimon-test-api "search"))))
       (should (equal 201 (plist-get response :status)))
       (should (hash-table-p (plist-get response :body)))
       (let ((job (plist-get response :body)))

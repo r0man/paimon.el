@@ -63,6 +63,18 @@
           (,db (paimon-db)))
      ,@body))
 
+(defmacro paimon-test-with-profile (db profile &rest body)
+  "Evaluate BODY with DB and PROFILE bound for a test."
+  (declare (indent 2))
+  (let ((db-sym (gensym "db"))
+        (profile-sym (gensym "profile")))
+    `(paimon-test-with-auth-info paimon-test-auth-info
+       (paimon-test-with-db ,db-sym
+         (let ((,profile-sym (closql-insert ,db-sym paimon-test-profile t)))
+           (let ((,db ,db-sym)
+                 (,profile ,profile-sym))
+             ,@body))))))
+
 (provide 'paimon-test)
 
 ;;; paimon-test.el ends here

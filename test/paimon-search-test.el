@@ -19,6 +19,28 @@
 (require 'paimon-search-job)
 (require 'paimon-test)
 
+(ert-deftest paimon-search--index-names->command-test ()
+  (should (equal "" (paimon-search--index-names->command nil)))
+  (should (equal "index=_internal OR index=main" (paimon-search--index-names->command '("_internal" "main")))))
+
+(ert-deftest paimon-search--search-command-test ()
+  (should (equal "search *" (paimon-search--search-command "*")))
+  (should (equal "search index=a OR index=b *" (paimon-search--search-command "*" :indexes'("a" "b")))))
+
+(ert-deftest paimon-search--index-names-test ()
+  (paimon-test-with-profile db profile
+    (aio-wait-for (paimon-data-indexes-synchronize db profile))
+    (should (equal '("_audit"
+                     "_internal"
+                     "_introspection"
+                     "_telemetry"
+                     "_thefishbucket"
+                     "history"
+                     "main"
+                     "splunklogger"
+                     "summary")
+                   (paimon-search--index-names db profile)))))
+
 (ert-deftest paimon-search-create-test ()
   (paimon-test-with-db db
     (save-window-excursion
