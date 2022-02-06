@@ -131,6 +131,7 @@ https://nullprogram.com/blog/2014/02/06/."
       latest-time
       search
       search-level
+      status-buckets
       sid]
      (:foreign-key [profile-id] :references profile [id] :on-delete :cascade))
     (search-result
