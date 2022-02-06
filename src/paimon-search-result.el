@@ -29,7 +29,7 @@
   :local t
   :type 'number)
 
-(defcustom paimon-search-results-limit 1000
+(defcustom paimon-search-results-limit 250
   "The number of search results fetched per HTTP request."
   :group 'paimon
   :local t
