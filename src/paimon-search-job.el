@@ -126,7 +126,7 @@
   (let ((status (paimon-search-job-dispatch-state job)))
     (cond
      ((paimon-search-job-expired-p job)
-      'breakpoint-disabled)
+      'font-lock-doc-face)
      ((member status '(nil "NONE" "QUEUED" "PARSING" "CREATED" "RUNNING" "FINALIZING"))
       'font-lock-keyword-face)
      ((equal "PAUSED" status)
