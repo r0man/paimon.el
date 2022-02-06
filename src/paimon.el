@@ -93,13 +93,21 @@
   :description "Change the search level."
   :key "-L")
 
+(transient-define-infix paimon-search:--status-buckets ()
+  :argument "--status-buckets="
+  :class 'transient-option
+  :description "The number of status buckets to generate."
+  :key "-B"
+  :reader 'transient-read-number-N0)
+
 ;;;###autoload
 (transient-define-prefix paimon-search ()
   "Execute the Datomic query at point against a Nubank service."
   ["Options"
    (paimon-search:--earliest-time)
    (paimon-search:--latest-time)
-   (paimon-search:--search-level)]
+   (paimon-search:--search-level)
+   (paimon-search:--status-buckets)]
   ["Actions"
    ("c" "Create search job" paimon-search-create)])
 

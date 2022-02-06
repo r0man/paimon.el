@@ -21,11 +21,6 @@
 (define-error 'paimon-api-error
   "Splunk API error")
 
-(defcustom paimon-api-max-results 1000
-  "The maximum number of search results to load per HTTP request."
-  :group 'paimon
-  :type 'number)
-
 (defvar paimon-api-search-job-actions
   '("cancel" "disablepreview" "enablepreview" "finalize" "pause" "setpriority" "setttl" "touch" "unpause")
   "The search job actions.")
@@ -287,7 +282,7 @@
       :type (or method "GET"))
     promise))
 
-(cl-defun paimon-api-create-search-job (api search &key earliest-time latest-time)
+(cl-defun paimon-api-create-search-job (api search &key earliest-time latest-time search-level status-buckets)
   "Create a search job.
 
   API The Splunk API.
@@ -296,8 +291,8 @@
   SEARCH The search query."
   (paimon-api-request api "services/search/jobs"
                       :method "POST"
-                      :body `(("adhoc_search_level" . "smart")
-                              ("status_buckets" . "10")
+                      :body `(("adhoc_search_level" . ,(or search-level "smart"))
+                              ("status_buckets" . ,status-buckets)
                               ("earliest_time" . ,earliest-time)
                               ("latest_time" . ,latest-time)
                               ("output_mode" . "json")
@@ -318,14 +313,14 @@
 (cl-defun paimon-api-search-job-results (api id &key count offset)
   "Get the search job results by ID from the Splunk API."
   (paimon-api-request api (paimon-api--search-job-path id "/results")
-                      :params `(("count" . ,(or count paimon-api-max-results))
+                      :params `(("count" . ,count)
                                 ("offset" . ,(or offset 0))
                                 ("output_mode" . "json"))))
 
 (cl-defun paimon-api-search-job-preview-results (api id &key count offset)
   "Get the search job preview results by ID from the Splunk API."
   (paimon-api-request api (paimon-api--search-job-path id "/results_preview")
-                      :params `(("count" . ,(or count paimon-api-max-results))
+                      :params `(("count" . ,count)
                                 ("offset" . ,(or offset 0))
                                 ("output_mode" . "json"))))
 

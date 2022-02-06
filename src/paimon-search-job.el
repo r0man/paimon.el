@@ -90,7 +90,13 @@
     :documentation "The sid of the job."
     :initarg :sid
     :initform nil
-    :type (or null string)))
+    :type (or null string))
+   (status-buckets
+    :accessor paimon-search-job-status-buckets
+    :documentation "The number of status buckets of the job."
+    :initarg :status-buckets
+    :initform 0
+    :type number))
   "A class representing a search job.")
 
 (defun paimon-search-jobs (db)
@@ -192,11 +198,13 @@
 
 (aio-defun paimon-search-job-create (job)
   "Create the search JOB asynchronously."
-  (with-slots (earliest-time latest-time search sid) job
+  (with-slots (earliest-time latest-time search search-level sid status-buckets) job
     (let ((response (aio-await (paimon-api-create-search-job
                                 (paimon-api-for job) search
                                 :earliest-time (paimon--format-time earliest-time)
-                                :latest-time (paimon--format-time latest-time)))))
+                                :latest-time (paimon--format-time latest-time)
+                                :search-level search-level
+                                :status-buckets status-buckets))))
       (pcase (plist-get response :status)
         (201 (setf sid (ht-get (plist-get response :body) "sid")) job)
         (_ (user-error "Can't create search job: %s" (plist-get response :body)))))))
@@ -242,7 +250,7 @@
     (let ((response (aio-await (paimon-api-search-job-results (paimon-api-for job) sid :offset offset :count count))))
       (pcase (plist-get response :status)
         (200 (paimon-search-job--parse-results job (plist-get response :body)))
-        (_ (user-error "Can't load preview results for search job %s" (paimon--bold id)))))))
+        (_ (user-error "Can't load results for search job %s" (paimon--bold id)))))))
 
 (aio-defun paimon-search-job-get-results-preview (job &optional offset count)
   "Fetch the log lines of the search JOB using OFFSET and COUNT. "
@@ -250,7 +258,7 @@
     (let ((response (aio-await (paimon-api-search-job-preview-results (paimon-api-for job) sid :offset offset :count count))))
       (pcase (plist-get response :status)
         (200 (paimon-search-job--parse-results job (plist-get response :body)))
-        (_ (user-error "Can't load results for search job %s" (paimon--bold id)))))))
+        (_ (user-error "Can't load preview results for search job %s" (paimon--bold id)))))))
 
 (defun paimon-search-job--save-results (db results)
   "Save the JOB search RESULTS in DB."

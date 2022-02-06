@@ -68,31 +68,37 @@
 
 (defun paimon-search-results--load-p (job results offset limit)
   "Return t if the search RESULTS of JOB should be loaded, otherwise nil."
-  (< (+ offset (length results))
-     (min (+ offset limit)
-          (paimon-search-job-event-count job))))
+  (< (+ offset (length results)) (min (+ offset limit) (paimon-search-job-event-count job))))
 
-(defun paimon-search-results-summary (job &optional offset limit)
-  "Show the pagination summary of the search JOB using OFFSET and LIMIT."
+(defun paimon-search-results--pagination-summary (job &optional offset limit)
+  "Return the results pagination summary for the search JOB using OFFSET and LIMIT."
   (let ((limit (or limit paimon-search-results-limit))
         (offset (or offset paimon-search-results-offset))
         (event-count (paimon-search-job-event-count job)))
-    (message "Showing search result %s - %s of %s in total."
-             (paimon--bold (+ 1 offset))
-             (paimon--bold (min event-count (+ offset limit)))
-             (paimon--bold (paimon-search-job-event-count job)))))
+    (format "search result %s - %s of %s in total"
+            (paimon--bold (+ 1 offset))
+            (paimon--bold (min event-count (+ offset limit)))
+            (paimon--bold (paimon-search-job-event-count job)))))
+
+(defun paimon-search-results--message-loading (job &optional offset limit)
+  "Display a message that results are loaded for the search JOB using OFFSET and LIMIT."
+  (message "Loading %s ..." (paimon-search-results--pagination-summary job offset limit)))
+
+(defun paimon-search-results--message-loaded (job &optional offset limit)
+  "Display a message that results are shown for the search JOB using OFFSET and LIMIT."
+  (message "Showing %s." (paimon-search-results--pagination-summary job offset limit)))
 
 (aio-defun paimon-search-results-view (job &optional offset limit)
   "Show the search results for JOB at OFFSET using LIMIT."
   (interactive (list paimon-search-results-job))
-  (when job
+  (let ((results (paimon-search-results-by-job job offset limit)))
+    (when (paimon-search-results--load-p job results offset limit)
+      (paimon-search-results--message-loading job)
+      (aio-await (if (member (paimon-search-job-dispatch-state job) '("RUNNING"))
+                     (paimon-search-job-load-results-preview job offset limit)
+                   (paimon-search-job-load-results job offset limit))))
     (revert-buffer)
-    (paimon-search-results-summary job)
-    (let ((results (paimon-search-results-by-job job offset limit)))
-      (when (paimon-search-results--load-p job results offset limit)
-        (aio-await (paimon-search-job-load-results-preview job offset limit))
-        (revert-buffer)
-        (paimon-search-results-summary job)))))
+    (paimon-search-results--message-loaded job)))
 
 (defun paimon-search-results-post-command-hook ()
   "Called after each command to trigger pagination when necessary."
