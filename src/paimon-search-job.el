@@ -15,11 +15,12 @@
 (require 'closql)
 (require 'eieio)
 (require 'ht)
-(require 'seq)
 (require 'paimon-api)
 (require 'paimon-db)
+(require 'paimon-profile)
 (require 'paimon-search-result)
 (require 'paimon-util)
+(require 'seq)
 (require 'subr-x)
 
 (defvar paimon-search-job-earliest-time-seconds-ago 300
