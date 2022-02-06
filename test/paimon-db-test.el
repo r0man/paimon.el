@@ -31,6 +31,6 @@
   (paimon-test-with-db db
     (let* ((profile (closql-insert db (paimon-profile)))
            (job (closql-insert db (paimon-search-job :id "1" :profile-id (oref profile id))))
-           (result (paimon-search-result :id ["1" 1] :job-id (oref job id) :offset 0 :data (ht-create))))
+           (result (paimon-search-result :id ["1" 1] :job-id (oref job id) :offset 0)))
       (should (closql-insert db job t))
       (should (closql-insert db result t)))))
