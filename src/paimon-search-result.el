@@ -58,7 +58,8 @@
     :accessor paimon-search-result-data
     :documentation "The data of the search result."
     :initarg :data
-    :initform nil)
+    :initform (ht-create)
+    :type hash-table)
    (offset
     :accessor paimon-search-result-offset
     :documentation "The offset of the search result."

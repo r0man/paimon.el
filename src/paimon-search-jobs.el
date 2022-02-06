@@ -127,38 +127,49 @@
       (setq-local paimon-search-results-job job)
       (paimon-search-results-mode))))
 
+(aio-defun paimon-search-jobs--lifecycle-done (job)
+  "Handle the life cycle of the search JOB when in the done state."
+  (let ((limit paimon-search-results-limit)
+        (offset paimon-search-results-offset))
+    (aio-await (paimon-search-job-load-results job offset limit))
+    (paimon-search-jobs--refresh-results job)
+    (message "Search job %s done." (paimon--bold (oref job id)))
+    nil))
+
+(aio-defun paimon-search-jobs--lifecycle-failed (job)
+  "Handle the life cycle of the search JOB when in the failed state."
+  (message "Search job %s failed." (paimon--bold (oref job id)))
+  nil)
+
+(aio-defun paimon-search-jobs--lifecycle-running (job)
+  "Handle the life cycle of the search JOB when in the running state."
+  (let ((limit paimon-search-results-limit)
+        (offset (paimon-search-job-results-count job)))
+    (when-let (results (aio-await (paimon-search-job-load-results-preview job offset limit)))
+      (when (zerop offset)
+        (paimon-search-jobs--refresh-results job))
+      (message "Loaded %s preview search results for job %s."
+               (paimon--bold (length results)) (paimon--bold (oref job id))))
+    (aio-await (aio-sleep 1))
+    t))
+
 (aio-defun paimon-search-jobs--manage-lifecycle-run (job)
   "Start the life-cycle update loop for the search JOB."
   (with-slots (id) job
-    (let ((limit paimon-search-results-limit)
-          (offset paimon-search-results-offset))
-      (condition-case error
-          (when (paimon-search-job-refresh-p job)
-            (message "Starting job %s lifcycle ..." (paimon--bold id))
-            (while (when-let (job (aio-await (paimon-search-job-update job)))
-                     (paimon-search-jobs-render t)
-                     (pcase (paimon-search-job-dispatch-state job)
-                       ("DONE"
-                        (aio-await (paimon-search-job-load-results job offset limit))
-                        (paimon-search-jobs--refresh-results job)
-                        (message "Search job %s done." (paimon--bold id))
-                        nil)
-                       ("FAILED"
-                        (message "Search job %s failed." (paimon--bold id))
-                        nil)
-                       ("RUNNING"
-                        (when-let (results (aio-await (paimon-search-job-load-results-preview job offset limit)))
-                          (paimon-search-jobs--refresh-results job)
-                          (message "Loaded %s preview search results for job %s."
-                                   (paimon--bold (length results)) (paimon--bold id)))
-                        (aio-await (aio-sleep 1))
-                        t)
-                       (_
-                        (aio-await (aio-sleep 1))
-                        t))))
-            (message "Search job %s lifcycle done." (paimon--bold id))
-            job)
-        (error (message "Search job %s lifecycle handler died: %s %s" id (car error) (cdr error)))))))
+    (condition-case error
+        (when (paimon-search-job-refresh-p job)
+          (message "Starting job %s lifcycle ..." (paimon--bold id))
+          (while (when-let (job (aio-await (paimon-search-job-synchronize job)))
+                   (paimon-search-jobs-render t)
+                   (aio-await
+                    (pcase (paimon-search-job-dispatch-state job)
+                      ("DONE" (paimon-search-jobs--lifecycle-done job))
+                      ("FAILED" (paimon-search-jobs--lifecycle-failed job))
+                      ("RUNNING" (paimon-search-jobs--lifecycle-running job))
+                      (_ (aio-sleep 1) t)))))
+          (message "Search job %s lifcycle done." (paimon--bold id))
+          job)
+      (error (message "Search job %s lifecycle handler died: %s %s" id (car error) (cdr error))))))
 
 (defun paimon-search-jobs--manage-lifecycle (job)
   "Start the life-cycle update loop for the search JOB."

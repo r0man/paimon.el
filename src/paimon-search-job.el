@@ -209,8 +209,8 @@
         (201 (setf sid (ht-get (plist-get response :body) "sid")) job)
         (_ (user-error "Can't create search job: %s" (plist-get response :body)))))))
 
-(aio-defun paimon-search-job-update (job)
-  "Update the search JOB details asynchronously."
+(aio-defun paimon-search-job-synchronize (job)
+  "Synchronize the search JOB with the Splunk API."
   (with-slots (id details sid) job
     (let ((response (aio-await (paimon-api-search-job (paimon-api-for job) sid))))
       (pcase (plist-get response :status)
@@ -292,7 +292,7 @@
   "Apply the ACTION on the search JOB and update."
   (when (and job action)
     (aio-await (paimon-search-job-control job action))
-    (aio-await (paimon-search-job-update job))))
+    (aio-await (paimon-search-job-synchronize job))))
 
 (defun paimon-search-job-profile (job)
   "Return the profile of the search JOB."
