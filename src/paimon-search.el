@@ -108,7 +108,7 @@
   :argument "--status-buckets="
   :class 'transient-option
   :description "The number of status buckets to generate."
-  :key "-B"
+  :key "-b"
   :reader 'transient-read-number-N0)
 
 (defun paimon-search--description ()
