@@ -120,6 +120,15 @@ https://nullprogram.com/blog/2014/02/06/."
       (identity :not-null)
       (port :not-null)
       (protocol :not-null)])
+    (data-index
+     [(class :not-null)
+      (id :not-null :primary-key)
+      (profile-id :not-null)
+      (acl :not-null)
+      (author :not-null)
+      (content :not-null)
+      (name :not-null)]
+     (:foreign-key [profile-id] :references profile [id] :on-delete :cascade))
     (search-job
      [(class :not-null)
       (id :not-null :primary-key)

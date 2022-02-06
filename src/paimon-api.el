@@ -282,7 +282,15 @@
       :type (or method "GET"))
     promise))
 
-(cl-defun paimon-api-create-search-job (api search &key earliest-time latest-time search-level status-buckets)
+(cl-defun paimon-api-data-indexes (api &key data-type)
+  "List the recognized indexes on the API.
+
+DATA-TYPE - Specifies the type (\"all\"|\"event\"|\"metric\") of index."
+  (paimon-api-request api "services/data/indexes"
+                      :params `(("datatype" . ,data-type)
+                                ("output_mode" . "json"))))
+
+(cl-defun paimon-api-search-job-create (api search &key earliest-time latest-time search-level status-buckets)
   "Create a search job.
 
   API The Splunk API.

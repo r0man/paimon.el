@@ -29,6 +29,22 @@
 (require 'subr-x)
 (require 'transient)
 
+(defun paimon-search--index-names (db profile)
+  "Return the search index names in DB for PROFILE."
+  (seq-map #'paimon-data-index-name (paimon-data-indexes-by-profile db profile)))
+
+(defun paimon-search--index-names->command (indexes)
+  "Format the INDEXES for use in a search command."
+  (thread-last indexes
+    (seq-map (lambda (index) (format "index=%s" index)))
+    (s-join " OR ")))
+
+(cl-defun paimon-search--search-command (query &key indexes)
+  "Return the search command for QUERY and INDEXES."
+  (thread-last (list "search" (paimon-search--index-names->command indexes) query)
+    (seq-remove #'s-blank-p)
+    (s-join " ")))
+
 (defun paimon-search-create (query &optional args)
   "Create a Splunk search for QUERY using ARGS."
   (interactive (list (or (and transient-current-prefix (oref transient-current-prefix scope))
@@ -38,12 +54,13 @@
          (earliest-time (transient-arg-value "--earliest-time=" args))
          (latest-time (transient-arg-value "--latest-time=" args))
          (search-level (transient-arg-value "--search-level=" args))
+         (indexes (paimon--transient-arg-multi-value "--indexes=" args))
          (profile (or paimon-search-jobs-profile (paimon-profile-current db)))
          (job (closql-insert db (paimon-search-job
                                  :earliest-time (or (paimon--parse-time earliest-time) (paimon-search-job-default-earliest-time))
                                  :latest-time (or (paimon--parse-time latest-time) (current-time))
                                  :profile-id (oref profile id)
-                                 :search (concat "search " query)
+                                 :search (paimon-search--search-command query :indexes indexes)
                                  :search-level (or search-level "smart")))))
     (paimon-search-jobs-list profile)
     (paimon-search-results-show job)
@@ -53,17 +70,30 @@
         (message "Search job %s created." (paimon--bold (oref job id)))
         (aio-await (paimon-search-jobs--manage-lifecycle job))))))
 
+(defun paimon-search--read-index (prompt initial-input history)
+  "Read the search index using PROMPT, INITIAL-INPUT and HISTORY."
+  (let ((indexes (paimon-search--index-names (paimon-db) (paimon-profile-current))))
+    (completing-read-multiple prompt indexes nil nil initial-input history)))
+
 (transient-define-infix paimon-search:--earliest-time ()
   :argument "--earliest-time="
   :class 'transient-option
-  :description "Sets the earliest time bounds for the search."
+  :description "The earliest time bounds of the search."
   :key "-e"
   :reader #'paimon--read-time)
+
+(transient-define-infix paimon-search:--indexes ()
+  :argument "--indexes="
+  :class 'transient-option
+  :description "The indexes to search in."
+  :key "-i"
+  :multi-value t
+  :reader #'paimon-search--read-index)
 
 (transient-define-infix paimon-search:--latest-time ()
   :argument "--latest-time="
   :class 'transient-option
-  :description "Sets the latest time bounds for the search."
+  :description "The latest time bounds of the search."
   :key "-l"
   :reader #'paimon--read-time)
 
@@ -71,7 +101,7 @@
   :argument "--search-level="
   :class 'transient-option
   :choices '("fast" "smart" "verbose")
-  :description "Change the search level."
+  :description "The search level to use."
   :key "-L")
 
 (transient-define-infix paimon-search:--status-buckets ()
@@ -93,6 +123,7 @@
   [:description
    paimon-search--description
    (paimon-search:--earliest-time)
+   (paimon-search:--indexes)
    (paimon-search:--latest-time)
    (paimon-search:--search-level)
    (paimon-search:--status-buckets)]
