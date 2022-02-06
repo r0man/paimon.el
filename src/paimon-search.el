@@ -113,9 +113,16 @@
 
 (defun paimon-search--description ()
   "Return the description of the `paimon-search' transient command."
-  (concat (propertize "Search Splunk" 'face 'transient-heading) "\n\n "
-          (propertize (oref transient--prefix scope) 'face 'transient-inactive-argument) "\n\n"
-          (propertize "Options" 'face 'transient-heading)))
+  (let* ((query (oref transient--prefix scope))
+         (indexes (oref (paimon--transient-suffix-by-argument "--indexes=" transient--suffixes) value))
+         (profile (paimon-profile-current))
+         (command (paimon-search--search-command query :indexes indexes)))
+    (concat (propertize "Search Splunk" 'face 'transient-heading)
+            (when profile
+              (propertize (format " - %s" (paimon-profile-identity profile)) 'face 'transient-inactive-argument))
+            "\n\n "
+            (propertize command 'face 'transient-inactive-argument) "\n\n"
+            (propertize "Options" 'face 'transient-heading))))
 
 ;;;###autoload
 (transient-define-prefix paimon-search (query)

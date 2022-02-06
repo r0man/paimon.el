@@ -10,12 +10,14 @@
 
 ;;; Code:
 
+(require 'eieio)
 (require 'ht)
 (require 'json)
 (require 'org)
 (require 'parse-time)
 (require 's)
 (require 'seq)
+(require 'transient)
 
 (defun paimon--human-name (s)
   "Return the human name of S."
@@ -87,6 +89,14 @@
     (seq-filter (lambda (x) (and (listp x) (equal arg (car x)))))
     (seq-first)
     (seq-rest)))
+
+(defun paimon--transient-suffix-by-argument (argument suffixes)
+  "Find the `transient-option' in SUFFIXES by ARGUMENT."
+  (thread-last suffixes
+    (seq-filter (lambda (obj)
+                  (and (cl-typep obj 'transient-option)
+                       (equal argument (oref obj argument)))))
+    (seq-first)))
 
 (defun paimon-with-errors--api-error (api-error)
   "Handle the API-ERROR."
