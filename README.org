@@ -93,8 +93,9 @@ auth-source-forget-all-cached= and try again.
 
 ** Acknowledgments
 
-Some code was taken and adapted from [[https://github.com/skeeto/elfeed/][elfeed]] and [[https://github.com/magit/forge][forge]]. Thanks to
-[[https://github.com/skeeto][skeeto]] and [[https://github.com/tarsius][tarius]] for their excellent packages and inspiration.
+Some code was taken and adapted from [[https://github.com/skeeto/elfeed/][elfeed]] and [[https://github.com/magit/forge][forge]], some
+inspiration from [[https://github.com/sebasmonia/pepita][pepita]]. Thanks to [[https://github.com/skeeto][skeeto]], [[https://github.com/tarsius][tarius]] and [[https://github.com/sebasmonia][sebasmonia]] for
+their excellent packages and inspiration.
 
 ** License
 
