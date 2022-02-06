@@ -75,6 +75,12 @@
     (js-mode)
     (switch-to-buffer-other-window (current-buffer))))
 
+(defun paimon--thing-at-point ()
+  "Return the active region or the thing at point."
+  (string-trim (if (use-region-p)
+                   (buffer-substring-no-properties (region-beginning) (region-end))
+                 (thing-at-point 'line t))))
+
 (defun paimon-with-errors--api-error (api-error)
   "Handle the API-ERROR."
   (let ((response (cdr api-error)))
