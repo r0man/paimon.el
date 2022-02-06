@@ -152,11 +152,26 @@ https://nullprogram.com/blog/2014/02/06/."
      (:foreign-key [job-id] :references search-job [id] :on-delete :cascade)))
   "The paimon.el database schema.")
 
+(defun paimon-db--create-profile-indexes (db)
+  "Create the indexes for the profiles in DB."
+  (emacsql db [:create :index profile-identity :on profile [identity]]))
+
+(defun paimon-db--create-search-job-indexes (db)
+  "Create the indexes for the search jobs in DB."
+  (emacsql db [:create :index search-job-profile-id :on search-job [profile-id]]))
+
+(defun paimon-db--create-search-result-indexes (db)
+  "Create the indexes for the search results in DB."
+  (emacsql db [:create :index search-result-index-job-id-offset :on search-result [job-id offset]]))
+
 (cl-defmethod closql--db-init ((db paimon-database))
   "Initialize the DB."
   (emacsql-with-transaction db
     (pcase-dolist (`(,table . ,schema) paimon--db-table-schemata)
       (emacsql db [:create-table $i1 $S2] table schema))
+    (paimon-db--create-profile-indexes db)
+    (paimon-db--create-search-job-indexes db)
+    (paimon-db--create-search-result-indexes db)
     (closql--db-set-version db paimon--db-version)))
 
 (defun paimon--db-maybe-update (db version)
