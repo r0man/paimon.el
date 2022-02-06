@@ -100,7 +100,7 @@
     ("basic" "Please enter the password for %u at Splunk API %h:%p")
     ("bearer" "Please enter the token for %u at Splunk API %h:%p")))
 
-(cl-defun paimon-profile-secret (profile &key create)
+(defun paimon-profile-secret (profile &optional create)
   "Return the secret of the PROFILE from `auth-sources' using CREATE, or ask the user."
   (with-slots (hostname identity port) profile
     (let* ((auth-source-creation-prompts `((secret . ,(paimon-profile--secret-prompt profile))))
@@ -156,7 +156,7 @@
                  (not (paimon-profile-secret profile))
                  (yes-or-no-p "Do you want to grab your authorization token from your Splunk server?"))
         (browse-url (paimon-api-authorization-tokens-url (paimon-api-for profile))))
-      (paimon-profile-secret profile :create t)
+      (paimon-profile-secret profile t)
       (paimon-data-indexes-synchronize db profile)
       (if (equal 1 (length (paimon-profiles db)))
           (paimon-profile-set-default profile)
