@@ -46,13 +46,19 @@
 (defvar-local paimon-search-results-layout-selected nil
   "The selected layout of the search results buffer.")
 
-(defun paimon-search-results-list-entries (job layout)
-  "Return a function that return the tabulated list entries for JOB in LAYOUT."
+(defun paimon-search-results-list-entries (job layout &optional query)
+  "Return a function that return the tabulated list entries.
+
+JOB    - The search job of the results.
+LAYOUT - Format list entries according to this layout.
+QUERY  - Run a SQL LIKE query on the data of the result."
   (lambda ()
     (let ((entry-fn (paimon-search-results-entry-fn job layout)))
       (seq-map (lambda (result)
                  (funcall entry-fn result))
-               (paimon-search-results-by-job job)))))
+               (if query
+                   (paimon-search-results-search-like job query)
+                 (paimon-search-results-by-job job))))))
 
 (defun paimon-search-results-show (job)
   "Show the results of the search JOB."
@@ -157,6 +163,15 @@
     (when-let (layout (paimon-search-results-layout-completing-read job))
       (paimon-search-results--setup-list job layout))))
 
+(defun paimon-search-results-search (job query)
+  "Search the results of the search JOB matching QUERY."
+  (interactive (list paimon-search-results-job (read-string "Search results: " nil 'paimon-search-results-query)))
+  (let ((layout (or paimon-search-results-layout-selected (paimon-search-results-layout-find job)))
+        (wild-card-query (concat "%" query "%")))
+    (setq-local paimon-search-results-offset 0)
+    (setq tabulated-list-entries (paimon-search-results-list-entries job layout wild-card-query))
+    (tabulated-list-print)))
+
 (defvar paimon-search-results-mode-map
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "L") 'paimon-search-results-switch-layout)
@@ -167,6 +182,7 @@
     (define-key map (kbd "l") 'paimon-search-jobs-list)
     (define-key map (kbd "n") 'paimon-search-results-next-line)
     (define-key map (kbd "p") 'paimon-search-results-previous-line)
+    (define-key map (kbd "s") 'paimon-search-results-search)
     (define-key map (kbd "w") 'paimon-profiles-list)
     map)
   "The key map for the `paimon-search-results-mode'.")
