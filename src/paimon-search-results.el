@@ -112,16 +112,16 @@ QUERY  - Run a SQL LIKE query on the data of the result."
   (message "Showing %s." (paimon-search-results--pagination-summary job offset limit)))
 
 (aio-defun paimon-search-results-view (job &optional offset limit)
-  "Show the search results for JOB at OFFSET using LIMIT."
-  (interactive (list paimon-search-results-job))
-  (let ((results (paimon-search-results-by-job job offset limit)))
-    (when (paimon-search-results--load-p job results offset limit)
-      (paimon-search-results--message-loading job)
-      (aio-await (if (member (paimon-search-job-dispatch-state job) '("RUNNING"))
-                     (paimon-search-job-load-results-preview job offset limit)
-                   (paimon-search-job-load-results job offset limit))))
-    (revert-buffer)
-    (paimon-search-results--message-loaded job)))
+           "Show the search results for JOB at OFFSET using LIMIT."
+           (interactive (list paimon-search-results-job))
+           (let ((results (paimon-search-results-by-job job offset limit)))
+             (when (paimon-search-results--load-p job results offset limit)
+               (paimon-search-results--message-loading job)
+               (aio-await (if (member (paimon-search-job-dispatch-state job) '("RUNNING"))
+                              (paimon-search-job-load-results-preview job offset limit)
+                            (paimon-search-job-load-results job offset limit))))
+             (revert-buffer)
+             (paimon-search-results--message-loaded job)))
 
 (defun paimon-search-results-post-command-hook ()
   "Called after each command to trigger pagination when necessary."
@@ -163,14 +163,22 @@ QUERY  - Run a SQL LIKE query on the data of the result."
     (when-let (layout (paimon-search-results-layout-completing-read job))
       (paimon-search-results--setup-list job layout))))
 
-(defun paimon-search-results-search (job query)
-  "Search the results of the search JOB matching QUERY."
-  (interactive (list paimon-search-results-job (read-string "Search results: " nil 'paimon-search-results-query)))
-  (let ((layout (or paimon-search-results-layout-selected (paimon-search-results-layout-find job)))
-        (wild-card-query (concat "%" query "%")))
-    (setq-local paimon-search-results-offset 0)
-    (setq tabulated-list-entries (paimon-search-results-list-entries job layout wild-card-query))
-    (tabulated-list-print)))
+(defun paimon-search-results-filter (job)
+  "Filter the results of the search JOB."
+  (interactive (list paimon-search-results-job))
+  (let ((hook (lambda (beg end len)
+                (let ((query (minibuffer-contents)))
+                  (with-current-buffer (get-buffer-create (paimon-search-job-buffer-name job))
+                    (let ((layout (or paimon-search-results-layout-selected (paimon-search-results-layout-find job)))
+                          (wild-card-query (concat "%" (replace-regexp-in-string "\s+" "%" query) "%")))
+                      (setq-local paimon-search-results-offset 0)
+                      (setq tabulated-list-entries (paimon-search-results-list-entries job layout wild-card-query))
+                      (tabulated-list-print)
+                      nil))))))
+    (minibuffer-with-setup-hook
+        (lambda () (add-hook 'after-change-functions hook))
+      (read-string "Filter search results: ")
+      (remove-hook 'after-change-functions hook))))
 
 (defvar paimon-search-results-mode-map
   (let ((map (make-sparse-keymap)))
@@ -179,6 +187,7 @@ QUERY  - Run a SQL LIKE query on the data of the result."
     (define-key map (kbd "P") 'paimon-search-results-previous)
     (define-key map (kbd "RET") 'paimon-search-result-show)
     (define-key map (kbd "c") 'paimon-search)
+    (define-key map (kbd "f") 'paimon-search-results-filter)
     (define-key map (kbd "l") 'paimon-search-jobs-list)
     (define-key map (kbd "n") 'paimon-search-results-next-line)
     (define-key map (kbd "p") 'paimon-search-results-previous-line)
