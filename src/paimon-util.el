@@ -108,7 +108,7 @@
     (seq-rest)))
 
 (defun paimon--transient-suffix-by-argument (argument suffixes)
-  "Find the `transient-option' in SUFFIXES by ARGUMENT."
+  "Find the option `transient-option' in SUFFIXES by ARGUMENT."
   (thread-last suffixes
     (seq-filter (lambda (obj)
                   (and (cl-typep obj 'transient-option)
