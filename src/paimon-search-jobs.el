@@ -132,7 +132,7 @@
 
 (defun paimon-search-jobs--lifecycle-registered-p (job)
   "Return t when there is a life cycle handler for JOB registered, otherwise nil."
-  (not (null (ht-get paimon-search-jobs--lifecycle-registry (oref job id)))))
+  (ht-get paimon-search-jobs--lifecycle-registry (oref job id)))
 
 (defun paimon-search-jobs--refresh-results (job)
   "Refresh the results of the search JOB."
