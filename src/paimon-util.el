@@ -118,7 +118,7 @@
 (defun paimon-with-errors--api-error (api-error)
   "Handle the API-ERROR."
   (let ((response (cdr api-error)))
-    (user-error "Splunk API error  HTTP %s. Reason: %s"
+    (user-error "Splunk API error: HTTP %s, Reason: %s"
                 (plist-get response :status)
                 (when-let (messages (ht-get (plist-get response :body) "messages"))
                   (when-let (message (elt messages 0))
