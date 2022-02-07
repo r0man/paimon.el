@@ -91,6 +91,10 @@ Credentials are cached by Emacs's [[https://www.gnu.org/software/emacs/manual/ht
 Emacs session. If you entered something wrong, run =M-x
 auth-source-forget-all-cached= and try again.
 
+** Screenshot
+
+[[doc/screenshot.png]]
+
 ** Acknowledgments
 
 Some code was taken and adapted from [[https://github.com/skeeto/elfeed/][elfeed]] and [[https://github.com/magit/forge][forge]], some
