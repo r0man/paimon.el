@@ -147,11 +147,7 @@
 
 (define-derived-mode paimon-search-result-mode js-mode "Search Result"
   "Special mode for search result buffers."
-  (setq major-mode 'paimon-search-result-mode)
-  (setq mode-name "Search Result")
-  (use-local-map paimon-search-result-mode-map)
-  (read-only-mode)
-  (run-mode-hooks 'paimon-search-result-mode-hook))
+  (read-only-mode))
 
 (provide 'paimon-search-result)
 
