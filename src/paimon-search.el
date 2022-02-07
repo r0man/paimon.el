@@ -92,14 +92,14 @@
   (let ((indexes (paimon-search--index-names (paimon-db) (paimon-profile-current))))
     (completing-read-multiple prompt indexes nil nil initial-input history)))
 
-(transient-define-infix paimon-search:--earliest-time ()
+(transient-define-infix paimon-search--earliest-time ()
   :argument "--earliest-time="
   :class 'transient-option
   :description "The earliest time bounds of the search."
   :key "-e"
   :reader #'paimon--read-time)
 
-(transient-define-infix paimon-search:--indexes ()
+(transient-define-infix paimon-search--indexes ()
   :argument "--indexes="
   :class 'transient-option
   :description "The indexes to search in."
@@ -107,21 +107,21 @@
   :multi-value t
   :reader #'paimon-search--read-index)
 
-(transient-define-infix paimon-search:--latest-time ()
+(transient-define-infix paimon-search--latest-time ()
   :argument "--latest-time="
   :class 'transient-option
   :description "The latest time bounds of the search."
   :key "-l"
   :reader #'paimon--read-time)
 
-(transient-define-infix paimon-search:--search-level ()
+(transient-define-infix paimon-search--search-level ()
   :argument "--search-level="
   :class 'transient-option
   :choices '("fast" "smart" "verbose")
   :description "The search level to use."
   :key "-L")
 
-(transient-define-infix paimon-search:--status-buckets ()
+(transient-define-infix paimon-search--status-buckets ()
   :argument "--status-buckets="
   :class 'transient-option
   :description "The number of status buckets to generate."
@@ -146,11 +146,11 @@
   "Create a Splunk search job for QUERY."
   [:description
    paimon-search--description
-   (paimon-search:--earliest-time)
-   (paimon-search:--indexes)
-   (paimon-search:--latest-time)
-   (paimon-search:--search-level)
-   (paimon-search:--status-buckets)]
+   (paimon-search--earliest-time)
+   (paimon-search--indexes)
+   (paimon-search--latest-time)
+   (paimon-search--search-level)
+   (paimon-search--status-buckets)]
   ["Actions"
    ("c" "Create search job" paimon-search-create)]
   (interactive (list (read-string "Search: " nil 'paimon-search-history)))
