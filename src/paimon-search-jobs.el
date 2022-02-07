@@ -169,21 +169,19 @@
 
 (aio-defun paimon-search-jobs--manage-lifecycle-run (job)
   "Start the life-cycle update loop for the search JOB."
-  (with-slots (id) job
-    (condition-case error
-        (when (paimon-search-job-refresh-p job)
-          (message "Starting job %s lifcycle ..." (paimon--bold id))
-          (while (when-let (job (aio-await (paimon-search-job-synchronize job)))
-                   (paimon-search-jobs-render t)
-                   (aio-await
-                    (pcase (paimon-search-job-dispatch-state job)
-                      ("DONE" (paimon-search-jobs--lifecycle-done job))
-                      ("FAILED" (paimon-search-jobs--lifecycle-failed job))
-                      ("RUNNING" (paimon-search-jobs--lifecycle-running job))
-                      (_ (aio-sleep 1) t)))))
-          (message "Search job %s lifcycle done." (paimon--bold id))
-          job)
-      (error (message "Search job %s lifecycle handler died: %s %s" id (car error) (cdr error))))))
+  (condition-case error
+      (when (paimon-search-job-refresh-p job)
+        (while (when-let (job (aio-await (paimon-search-job-synchronize job)))
+                 (paimon-search-jobs-render t)
+                 (aio-await
+                  (pcase (paimon-search-job-dispatch-state job)
+                    ("DONE" (paimon-search-jobs--lifecycle-done job))
+                    ("FAILED" (paimon-search-jobs--lifecycle-failed job))
+                    ("RUNNING" (paimon-search-jobs--lifecycle-running job))
+                    (_ (aio-sleep 1) t)))))
+        job)
+    (error (message "Search job %s lifecycle handler died: %s %s"
+                    (oref job id) (car error) (cdr error)))))
 
 (defun paimon-search-jobs--manage-lifecycle (job)
   "Start the life-cycle update loop for the search JOB."
