@@ -124,6 +124,20 @@
                           (or limit paimon-search-results-limit)
                           (or offset paimon-search-results-offset))))
 
+(defun paimon-search-results-search-like (job query &optional offset limit)
+  "Search the results of the search JOB matching QUERY using OFFSET and LIMIT."
+  (seq-map (lambda (row) (closql--remake-instance 'paimon-search-result (paimon-db) row))
+           (paimon-db-sql [:select [*]
+                                   :from search-result
+                                   :where (and (= job-id $s1) (like data $r4))
+                                   :order-by [(asc offset)]
+                                   :limit $s2
+                                   :offset $s3]
+                          (oref job id)
+                          (or limit paimon-search-results-limit)
+                          (or offset paimon-search-results-offset)
+                          query)))
+
 (defun paimon-search-result-show (result)
   "Show the search RESULT."
   (interactive (list (paimon-search-result-under-point)))
