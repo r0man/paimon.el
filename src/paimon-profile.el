@@ -146,10 +146,7 @@
 
 (defun paimon-profile--read-port ()
   "Read the authentication type from the user."
-  emacs-version
-  (if (>= emacs-major-version 28)
-      (read-number "Port: " 8089 'paimon-profile-port)
-    (read-number "Port: " 8089)))
+  (read-number "Port: " 8089))
 
 (defun paimon-profile--read-identity ()
   "Read the identity from the user."
