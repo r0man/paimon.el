@@ -181,7 +181,7 @@
     (use-local-map paimon-search-results-mode-map)
     (hl-line-mode 1)
     (paimon-search-results--setup-list job layout)
-    (add-hook 'post-command-hook 'paimon-search-results-post-command-hook nil t)
+    (add-hook 'post-command-hook #'paimon-search-results-post-command-hook nil t)
     (run-mode-hooks 'paimon-search-results-mode-hook)))
 
 (provide 'paimon-search-results)
