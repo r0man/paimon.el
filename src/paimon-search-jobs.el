@@ -262,16 +262,12 @@
 
 (define-derived-mode paimon-search-jobs-mode tabulated-list-mode "Search Jobs"
   "Special mode for search jobs buffers."
-  (setq major-mode 'paimon-search-jobs-mode)
-  (setq mode-name "Search Jobs")
   (setq tabulated-list-entries #'paimon-search-jobs-list-entries)
   (setq tabulated-list-format paimon-search-jobs-list-format)
   (setq tabulated-list-sort-key paimon-search-jobs-list-sort-key)
-  (use-local-map paimon-search-jobs-mode-map)
   (tabulated-list-init-header)
   (tabulated-list-print)
   (hl-line-mode 1)
-  (run-mode-hooks 'paimon-search-jobs-mode-hook)
   (paimon-search-jobs--manage-lifecycles (paimon-search-jobs (paimon-db))))
 
 (defun paimon-search-jobs-list (profile)

@@ -176,13 +176,9 @@
   (let* ((job paimon-search-results-job)
          (layout (or paimon-search-results-layout-selected (paimon-search-results-layout-find job))))
     (cl-check-type job paimon-search-job)
-    (setq major-mode 'paimon-search-results-mode)
-    (setq mode-name "Search Results")
-    (use-local-map paimon-search-results-mode-map)
     (hl-line-mode 1)
     (paimon-search-results--setup-list job layout)
-    (add-hook 'post-command-hook #'paimon-search-results-post-command-hook nil t)
-    (run-mode-hooks 'paimon-search-results-mode-hook)))
+    (add-hook 'post-command-hook #'paimon-search-results-post-command-hook nil t)))
 
 (provide 'paimon-search-results)
 

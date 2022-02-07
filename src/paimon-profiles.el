@@ -142,16 +142,12 @@
 
 (define-derived-mode paimon-profiles-mode tabulated-list-mode "Profiles"
   "Special mode for profiles."
-  (setq major-mode 'paimon-profiles-mode)
-  (setq mode-name "Profiles")
   (hl-line-mode 1)
-  (use-local-map paimon-profiles-mode-map)
   (setq tabulated-list-entries #'paimon-profiles-list-entries)
   (setq tabulated-list-format paimon-profiles-list-format)
   (setq tabulated-list-sort-key paimon-profiles-list-sort-key)
   (tabulated-list-init-header)
-  (tabulated-list-print)
-  (run-mode-hooks 'paimon-profiles-mode-hook))
+  (tabulated-list-print))
 
 ;;;###autoload
 (defun paimon-profiles-list ()
