@@ -118,11 +118,11 @@
 (defun paimon-with-errors--api-error (api-error)
   "Handle the API-ERROR."
   (let ((response (cdr api-error)))
-    (user-error (format "Splunk API error. HTTP %s. Reason: %s"
-                        (plist-get response :status)
-                        (when-let (messages (ht-get (plist-get response :body) "messages"))
-                          (when-let (message (elt messages 0))
-                            (ht-get message "text")))))))
+    (user-error "Splunk API error  HTTP %s. Reason: %s"
+                (plist-get response :status)
+                (when-let (messages (ht-get (plist-get response :body) "messages"))
+                  (when-let (message (elt messages 0))
+                    (ht-get message "text"))))))
 
 (defmacro paimon-with-errors (&rest body)
   "Evaluate BODY and handle errors."
