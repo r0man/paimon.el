@@ -38,15 +38,18 @@ saved or not:
 - Password: =12345678=
 
 After entering this information you will end up in the
-=*paimon-search-jobs*= buffer. Let's search the =_internal= index of
-the local Splunk server by pressing =c=. You will now see a [[https://github.com/magit/transient][transient]]
-based menu where you can select some search options like the earliest
-and latest time of the search.
+=*paimon-search-jobs*= buffer.
 
-We don't choose anything here for now and continue by pressing =c=
-again to enter the Splunk [[https://docs.splunk.com/Documentation/Splunk/8.2.4/SearchReference/Search][search command]]. Let's enter
-=index=_internal= to search the internal logs of the local Splunk
-server.
+Let's search the =_internal= index of the local Splunk server by
+pressing =c=. You will be asked to enter a [[https://docs.splunk.com/Documentation/Splunk/8.2.4/SearchReference/Search][search command]]. Enter =*=
+to search for everything.
+
+Next, you will see a [[https://github.com/magit/transient][transient]] based menu where you can select some
+search options like the indexes, earliest and latest time of the
+search, etc.
+
+Press =-i=, enter the =_internal= as the index and press =c= again to
+create a Splunk search job.
 
 You will see that a search job got created in the
 =*paimon-search-jobs*= buffer, and another buffer will pop up that
