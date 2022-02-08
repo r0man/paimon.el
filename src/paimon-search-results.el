@@ -112,16 +112,16 @@ QUERY  - Run a SQL LIKE query on the data of the result."
   (message "Showing %s." (paimon-search-results--pagination-summary job offset limit)))
 
 (aio-defun paimon-search-results-view (job &optional offset limit)
-           "Show the search results for JOB at OFFSET using LIMIT."
-           (interactive (list paimon-search-results-job))
-           (let ((results (paimon-search-results-by-job job offset limit)))
-             (when (paimon-search-results--load-p job results offset limit)
-               (paimon-search-results--message-loading job)
-               (aio-await (if (member (paimon-search-job-dispatch-state job) '("RUNNING"))
-                              (paimon-search-job-load-results-preview job offset limit)
-                            (paimon-search-job-load-results job offset limit))))
-             (revert-buffer)
-             (paimon-search-results--message-loaded job)))
+  "Show the search results for JOB at OFFSET using LIMIT."
+  (interactive (list paimon-search-results-job))
+  (let ((results (paimon-search-results-by-job job offset limit)))
+    (when (paimon-search-results--load-p job results offset limit)
+      (paimon-search-results--message-loading job)
+      (aio-await (if (member (paimon-search-job-dispatch-state job) '("RUNNING"))
+                     (paimon-search-job-load-results-preview job offset limit)
+                   (paimon-search-job-load-results job offset limit))))
+    (revert-buffer)
+    (paimon-search-results--message-loaded job)))
 
 (defun paimon-search-results-post-command-hook ()
   "Called after each command to trigger pagination when necessary."
