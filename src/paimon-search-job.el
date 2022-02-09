@@ -224,7 +224,8 @@
                                 :search-level search-level
                                 :status-buckets status-buckets))))
       (pcase (plist-get response :status)
-        (201 (setf sid (ht-get (plist-get response :body) "sid")) job)
+        (201 (setf sid (ht-get (plist-get response :body) "sid"))
+             (closql-insert (closql--oref job 'closql-database) job t))
         (_ (user-error "Can't create search job: %s" (plist-get response :body)))))))
 
 (aio-defun paimon-search-job-synchronize (job)
