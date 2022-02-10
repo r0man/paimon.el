@@ -140,8 +140,12 @@
       (with-current-buffer buffer
         (let ((inhibit-read-only t))
           (erase-buffer)
-          (json-insert (oref result data))
-          (json-pretty-print-buffer)
+          (condition-case error
+              (progn (json-insert (oref result data))
+                     (json-pretty-print-buffer))
+            (error (insert "/*\n\n WARNING: Can't render search result in JSON.\n\n")
+                   (insert (format " Error: %s\n\n %s\n*/\n\n" (car error) (pp-to-string (cdr error))))
+                   (insert (pp-to-string (oref result data)))))
           (paimon-search-result-mode))))))
 
 (defvar paimon-search-result-mode-map
