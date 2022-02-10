@@ -167,6 +167,7 @@ QUERY  - Run a SQL LIKE query on the data of the result."
   "Filter the results of the search JOB."
   (interactive (list paimon-search-results-job))
   (let ((hook (lambda (beg end len)
+                (ignore beg end len)
                 (let ((query (minibuffer-contents)))
                   (with-current-buffer (get-buffer-create (paimon-search-job-buffer-name job))
                     (let ((layout (or paimon-search-results-layout-selected (paimon-search-results-layout-find job)))
