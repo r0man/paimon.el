@@ -52,9 +52,6 @@
   :local t
   :type 'number)
 
-(defvar paimon-search-result-pre-processor nil
-  "The search result pre-processor function.")
-
 (defclass paimon-search-result (closql-object)
   ((closql-table :initform 'search-result)
    (closql-primary-key :initform 'id)
@@ -109,12 +106,6 @@
 (defun paimon-search-result-raw (result)
   "Return the raw log line from the search RESULT."
   (paimon-search-result-get-data result "_raw"))
-
-(defun paimon-search-result-pre-process (result)
-  "Pre-process the search RESULT."
-  (if (functionp paimon-search-result-pre-processor)
-      (funcall paimon-search-result-pre-processor result)
-    result))
 
 (defun paimon-search-results-by-job (job &optional offset limit)
   "Return the search results of the search JOB using OFFSET and LIMIT."

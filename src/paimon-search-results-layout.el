@@ -63,6 +63,9 @@
 (cl-defgeneric paimon-search-results-layout-sort-key (job layout)
   "Return the tabulated-list sort key of the JOB using LAYOUT.")
 
+(cl-defgeneric paimon-search-results-layout-pre-process (job layout result)
+  "Pre-process the RESULT of the search JOB with LAYOUT.")
+
 (cl-defmethod paimon-search-results-entry-fn (job (layout paimon-search-results-layout))
   "Return the tabulated-list format of the JOB using LAYOUT."
   (when-let (readers (paimon-search-results-layout--readers job layout))
@@ -85,6 +88,17 @@
 (cl-defmethod paimon-search-results-layout-sort-key (job (layout paimon-search-results-layout))
   "Return the tabulated-list sort key of the JOB using LAYOUT."
   (ignore job layout))
+
+(cl-defmethod paimon-search-results-layout-pre-process (job layout result)
+  "Pre-process the RESULT of the search JOB with LAYOUT."
+  (ignore job layout)
+  result)
+
+(defun paimon-search-results-layout-pre-process-all (job result)
+  "Pre-process the RESULT of the search JOB with all `paimon-search-results-layouts'."
+  (seq-reduce (lambda (result layout)
+                (paimon-search-results-layout-pre-process job layout result))
+              paimon-search-results-layouts result))
 
 (defun paimon-search-results-layout-completing-read (job)
   "Completing read a search result layout for the search JOB."

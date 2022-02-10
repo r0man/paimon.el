@@ -253,12 +253,12 @@
     (let* ((offset (ht-get response "init_offset"))
            (results (seq-map-indexed
                      (lambda (result index)
-                       (paimon-search-result-pre-process
-                        (paimon-search-result
-                         :data result
-                         :id (vector id (+ offset index))
-                         :job-id id
-                         :offset (+ offset index))))
+                       (let ((result (paimon-search-result
+                                      :data result
+                                      :id (vector id (+ offset index))
+                                      :job-id id
+                                      :offset (+ offset index))))
+                         (paimon-search-results-layout-pre-process-all job result)))
                      (ht-get response "results"))))
       (ht-set! response "results" results)
       response)))
