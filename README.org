@@ -56,9 +56,9 @@ You will see that a search job got created in the
 shows the search results once preview results are available or the
 search has been completed.
 
-The search results buffer will show the first 1000 results. To show
-the next page of results press =N=, to go back to the previous page
-press =P=.
+The search results buffer will show the first 250 results. To show the
+next page of results press =N=, to go back to the previous page press
+=P=.
 
 That's it. For more help on the keybindings press =C-h m=.
 
