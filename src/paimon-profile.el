@@ -161,14 +161,14 @@
    :port (paimon-profile--read-port)
    :identity (paimon-profile--read-identity)))
 
-(defun paimon-profile-setup (db)
-  "Setup a profile in DB."
+(defun paimon-profile-setup (db &optional profile)
+  "Setup the PROFILE in DB."
   (interactive (list (paimon-db)))
-  (let ((profile (closql-insert db (paimon-profile--read) t)))
+  (let ((profile (closql-insert db (or profile (paimon-profile--read)) t)))
     (with-slots (auth-type) profile
       (when (and (equal "bearer" auth-type)
                  (not (paimon-profile-secret profile))
-                 (yes-or-no-p "Do you want to grab your authorization token from your Splunk server?"))
+                 (yes-or-no-p "Do you want to grab your authorization token from Splunk?"))
         (browse-url (paimon-api-authorization-tokens-url (paimon-api-for profile))))
       (paimon-profile-secret profile t)
       (paimon-data-indexes-synchronize db profile)

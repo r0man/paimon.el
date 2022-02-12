@@ -41,9 +41,9 @@
   "Show the search jobs of the current profile."
   (interactive)
   (let ((db (paimon-db)))
-    (if-let (profile (paimon-profile-current db))
-        (paimon-search-jobs-list profile)
-      (paimon-search-jobs-list (paimon-profile-setup db)))))
+    (paimon-search-jobs-list
+     (or (paimon-profile-current db)
+         (paimon-profile-setup db)))))
 
 (provide 'paimon)
 
