@@ -32,6 +32,12 @@
 (require 'paimon-db)
 (require 'paimon-test)
 
+(ert-deftest paimon-data-indexes-test ()
+  (paimon-test-with-profile db profile
+    (should (not (paimon-data-indexes db)))
+    (let ((data-indexes (aio-wait-for (paimon-data-indexes-synchronize db profile))))
+      (should (paimon-data-indexes db)))))
+
 (ert-deftest paimon-data-indexes-load-test ()
   (paimon-test-with-profile _db profile
     (let ((data-indexes (aio-wait-for (paimon-data-indexes-load profile))))

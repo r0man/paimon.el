@@ -77,8 +77,8 @@
     :type string))
   "A class representing a Splunk data index.")
 
-(defun paimon-data-indexs (db)
-  "Return the search jobs from DB."
+(defun paimon-data-indexes (db)
+  "Return the data indexes from DB."
   (closql-entries db nil 'paimon-data-index))
 
 (defun paimon-data-indexes-by-profile (db profile)
