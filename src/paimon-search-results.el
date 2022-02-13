@@ -34,9 +34,12 @@
 (require 'paimon-search-results-layout)
 (require 'tabulated-list)
 
-(defvar paimon-search-results-buffer-name
-  "*paimon-search-results*"
-  "The name of the search result buffer.")
+(defcustom paimon-search-results-buffer-template
+  "*paimon-search-results-%s*"
+  "The template of the search results buffer."
+  :group 'paimon
+  :safe #'stringp
+  :type 'string)
 
 (defvar-local paimon-search-results-job nil
   "The search results job.")
@@ -45,6 +48,10 @@
 
 (defvar-local paimon-search-results-layout-selected nil
   "The selected layout of the search results buffer.")
+
+(defun paimon-search-results-buffer-name (profile)
+  "Return the search jobs buffer name for PROFILE."
+  (format paimon-search-results-buffer-template (oref profile identity)))
 
 (defun paimon-search-results-list-entries (job layout &optional query)
   "Return a function that return the tabulated list entries.
@@ -64,30 +71,30 @@ QUERY  - Run a SQL LIKE query on the data of the result."
   "Show the results of the search JOB."
   (interactive (list (paimon-search-job-under-point)))
   (with-slots (id search) job
-    (let ((buffer (get-buffer-create (paimon-search-job-buffer-name job))))
-      (with-current-buffer buffer
+    (let ((profile (paimon-search-job-profile job)))
+      (with-current-buffer (get-buffer-create (paimon-search-results-buffer-name profile))
         (setq-local paimon-search-results-job job)
         (paimon-search-results-mode)
         (let ((split-width-threshold nil))
-          (switch-to-buffer-other-window buffer))))))
+          (switch-to-buffer-other-window (current-buffer)))))))
 
-(defun paimon-search-results--render-under-point ()
-  "Render the search result under point when `paimon-search-results-buffer-name` is visible."
-  (when (get-buffer-window paimon-search-result-buffer-name)
-    (when-let (result (paimon-search-result-under-point))
-      (paimon-search-result-show result))))
+(defun paimon-search-results--profile ()
+  "Return the profile of the the search results mode."
+  (when-let (job paimon-search-results-job)
+    (paimon-search-job-profile job)))
 
 (defun paimon-search-results-next-line (&optional n)
   "Move N lines forward (backward if N is negative) and show the search result under point."
   (interactive "P")
   (forward-line n)
-  (paimon-search-results--render-under-point))
+  (when (get-buffer-window (paimon-search-result-buffer-name (paimon-search-results--profile)))
+    (when-let (result (paimon-search-result-under-point))
+      (paimon-search-result-show result))))
 
 (defun paimon-search-results-previous-line (&optional n)
   "Move cursor vertically up N lines and show the search result under point."
   (interactive "P")
-  (forward-line (- (or n 1)))
-  (paimon-search-results--render-under-point))
+  (paimon-search-results-next-line (- (or n 1))))
 
 (defun paimon-search-results--load-p (job results offset limit)
   "Return t if the search RESULTS of JOB should be loaded, otherwise nil."
@@ -166,16 +173,17 @@ QUERY  - Run a SQL LIKE query on the data of the result."
 (defun paimon-search-results-filter (job)
   "Filter the results of the search JOB."
   (interactive (list paimon-search-results-job))
-  (let ((hook (lambda (beg end len)
-                (ignore beg end len)
-                (let ((query (minibuffer-contents)))
-                  (with-current-buffer (get-buffer-create (paimon-search-job-buffer-name job))
-                    (let ((layout (or paimon-search-results-layout-selected (paimon-search-results-layout-find job)))
-                          (wild-card-query (concat "%" (replace-regexp-in-string "\s+" "%" query) "%")))
-                      (setq-local paimon-search-results-offset 0)
-                      (setq tabulated-list-entries (paimon-search-results-list-entries job layout wild-card-query))
-                      (tabulated-list-print)
-                      nil))))))
+  (let* ((profile (paimon-search-job-profile job))
+         (hook (lambda (beg end len)
+                 (ignore beg end len)
+                 (let ((query (minibuffer-contents)))
+                   (with-current-buffer (get-buffer-create (paimon-search-results-buffer-name profile))
+                     (let ((layout (or paimon-search-results-layout-selected (paimon-search-results-layout-find job)))
+                           (wild-card-query (concat "%" (replace-regexp-in-string "\s+" "%" query) "%")))
+                       (setq-local paimon-search-results-offset 0)
+                       (setq tabulated-list-entries (paimon-search-results-list-entries job layout wild-card-query))
+                       (tabulated-list-print)
+                       nil))))))
     (minibuffer-with-setup-hook
         (lambda () (add-hook 'after-change-functions hook))
       (read-string "Filter search results: ")

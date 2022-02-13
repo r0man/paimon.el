@@ -42,6 +42,20 @@
 (require 'subr-x)
 (require 'tabulated-list)
 
+(defcustom paimon-search-jobs-buffer-template
+  "*paimon-search-jobs-%s*"
+  "The template of the search jobs buffer."
+  :group 'paimon
+  :safe #'stringp
+  :type 'string)
+
+(defcustom paimon-search-jobs-list-sort-key
+  '("Created At" . t)
+  "Sort the search jobs on this key."
+  :group 'paimon
+  :safe #'listp
+  :type 'list)
+
 (defvar-local paimon-search-jobs-profile nil
   "The profile used for the search job.")
 
@@ -56,19 +70,9 @@
    ("Search" 37 t)]
   "The `tabulated-list-mode' format of the search jobs buffer.")
 
-(defcustom paimon-search-jobs-buffer-name
-  "*paimon-search-jobs*"
-  "The search jobs buffer name."
-  :group 'paimon
-  :safe #'stringp
-  :type 'string)
-
-(defcustom paimon-search-jobs-list-sort-key
-  '("Created At" . t)
-  "Sort the search jobs on this key."
-  :group 'paimon
-  :safe #'listp
-  :type 'list)
+(defun paimon-search-jobs-buffer-name (profile)
+  "Return the search jobs buffer name for PROFILE."
+  (format paimon-search-jobs-buffer-template (oref profile identity)))
 
 (defun paimon--trim-search-term (s)
   "Trim the search term from S."
@@ -121,10 +125,10 @@
     (when-let (jobs (paimon-search-jobs-by-profile (paimon-db) profile))
       (seq-map #'paimon-search-jobs-list-entry jobs))))
 
-(defun paimon-search-jobs-render (&optional remember-pos update)
-  "Render the search list entries using REMEMBER-POS and UPDATE."
+(defun paimon-search-jobs-render (profile &optional remember-pos update)
+  "Render the search list entries for PROFILE using REMEMBER-POS and UPDATE."
   (interactive)
-  (with-current-buffer (get-buffer-create paimon-search-jobs-buffer-name)
+  (with-current-buffer (get-buffer-create (paimon-search-jobs-buffer-name profile))
     (tabulated-list-print remember-pos update)))
 
 (defvar paimon-search-jobs--lifecycle-registry (ht-create)
@@ -172,7 +176,7 @@
   (condition-case error
       (when (paimon-search-job-refresh-p job)
         (while (when-let (job (aio-await (paimon-search-job-synchronize job)))
-                 (paimon-search-jobs-render t)
+                 (paimon-search-jobs-render (paimon-search-job-profile job) t)
                  (aio-await
                   (pcase (paimon-search-job-dispatch-state job)
                     ("DONE" (paimon-search-jobs--lifecycle-done job))
@@ -207,7 +211,7 @@
     (let ((id (paimon--bold (oref job id))))
       (when doing (message "%s search job %s ..." doing id))
       (aio-await (paimon-search-job-apply-action job action))
-      (paimon-search-jobs-render t t)
+      (paimon-search-jobs-render (paimon-search-job-profile job) t t)
       (when done (message "Search job %s %s." id done)))))
 
 (defun paimon-search-jobs-browse (job)
@@ -226,7 +230,7 @@
   (interactive (list (paimon-search-job-under-point)))
   (when job
     (paimon-search-job-delete job)
-    (paimon-search-jobs-render t)))
+    (paimon-search-jobs-render (paimon-search-job-profile job) t)))
 
 (defun paimon-search-jobs-finalize (job)
   "Finalize the search JOB under point."
@@ -271,7 +275,7 @@
 (defun paimon-search-jobs-list (profile)
   "List the search jobs for PROFILE."
   (interactive (list (paimon-profile-current)))
-  (let ((buffer (get-buffer-create paimon-search-jobs-buffer-name)))
+  (let ((buffer (get-buffer-create (paimon-search-jobs-buffer-name profile))))
     (with-current-buffer buffer
       (switch-to-buffer buffer)
       (setq-local paimon-search-jobs-profile profile)
