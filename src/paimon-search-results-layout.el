@@ -41,13 +41,7 @@
     :documentation "The id of the search results layout."
     :initarg :id
     :initform 'default
-    :type symbol)
-   (required-fields
-    :accessor paimon-search-results-layout-required-fields
-    :documentation "The required fields of the search results layout."
-    :initarg :required-fields
-    :initform nil
-    :type list))
+    :type symbol))
   "Search result layout showing all fields.")
 
 (defvar paimon-search-results-layouts
@@ -68,8 +62,9 @@
   (when-let (readers (paimon-search-results-layout--readers job layout))
     (lambda (result)
       (let ((columns (seq-map (lambda (reader) (funcall reader result)) readers)))
-        (list (oref result id)
-              (apply #'vector columns))))))
+        (unless (seq-every-p #'null columns)
+          (list (oref result id)
+                (apply #'vector (seq-map (lambda (column) (format "%s" (or column ""))) columns))))))))
 
 (cl-defmethod paimon-search-results-layout-format (job (layout paimon-search-results-layout))
   "Return the tabulated-list format of the JOB using LAYOUT."
@@ -117,20 +112,21 @@
                     (path (seq-into (plist-get options :data) 'list)))
                (lambda (result)
                  (with-slots (data) result
-                   (s-trim (format "%s" (or (condition-case nil
-                                                (apply #'ht-get* data path)
-                                              (wrong-type-argument))
-                                            "")))))))
+                   (condition-case nil
+                       (when-let (value (apply #'ht-get* data path))
+                         (s-trim (format "%s" value)))
+                     (wrong-type-argument))))))
            (paimon-search-results-layout-format job layout)))
 
-(defun paimon-search-results-layout--supported-p (job layout)
-  "Return t if the LAYOUT is supported by the search JOB, otherwise nil."
-  (with-slots (required-fields) layout
-    (cl-subsetp required-fields (paimon-search-job-field-names job) :test #'equal)))
+(defun paimon-search-results-layout--supported-p (job layout results)
+  "Return t if the LAYOUT is supported by the RESULTS of the search JOB, otherwise nil."
+  (let ((entry-fn (paimon-search-results-entry-fn job layout)))
+    (seq-every-p (lambda (result) (funcall entry-fn result)) results)))
 
 (defun paimon-search-results-layout--filter-supported (job layouts)
   "Filter the LAYOUTS supported by the search JOB."
-  (seq-filter (lambda (layout) (paimon-search-results-layout--supported-p job layout)) layouts))
+  (let ((results (paimon-search-results-by-job job paimon-search-results-offset 10)))
+    (seq-filter (lambda (layout) (paimon-search-results-layout--supported-p job layout results)) layouts)))
 
 (defun paimon-search-results-layout--annotation-function (layout-name)
   "Return the annotation for LAYOUT-NAME using `minibuffer-completion-table'."
@@ -140,8 +136,7 @@
 ;; Minimal Layout
 
 (defclass paimon-search-results-layout-minimal (paimon-search-results-layout)
-  ((id :initform 'minimal)
-   (required-fields :initform '("_time" "_raw")))
+  ((id :initform 'minimal))
   "Search result layout showing the time and raw fields.")
 
 (add-to-list 'paimon-search-results-layouts (paimon-search-results-layout-minimal))
@@ -155,8 +150,7 @@
 ;; Raw Layout
 
 (defclass paimon-search-results-layout-raw (paimon-search-results-layout)
-  ((id :initform 'raw)
-   (required-fields :initform '("_raw")))
+  ((id :initform 'raw))
   "Search result layout showing the raw field.")
 
 (add-to-list 'paimon-search-results-layouts (paimon-search-results-layout-raw))
