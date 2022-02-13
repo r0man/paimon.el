@@ -37,12 +37,12 @@
   (paimon-test-with-db db
     (save-window-excursion
       (let* ((paimon-search-results-limit 5)
-             (_profile (closql-insert db (paimon-profile :default 1)))
+             (profile (closql-insert db (paimon-profile :default 1)))
              (job (aio-wait-for (paimon-search-create "index=_internal"))))
         (should (cl-typep job 'paimon-search-job))
         (should (equal "DONE" (paimon-search-job-dispatch-state job)))
         (paimon-search-results-show job)
-        (with-current-buffer (get-buffer (paimon-search-job-buffer-name job))
+        (with-current-buffer (get-buffer (paimon-search-results-buffer-name profile))
           (should (equal 0 (oref (paimon-search-result-under-point) offset)))
           (goto-char (point-max))
           (forward-line -1)
@@ -52,10 +52,10 @@
   (paimon-test-with-db db
     (save-window-excursion
       (let* ((paimon-search-results-limit 5)
-             (_profile (closql-insert db (paimon-profile :default 1)))
+             (profile (closql-insert db (paimon-profile :default 1)))
              (job (aio-wait-for (paimon-search-create "index=_internal"))))
         (paimon-search-results-show job)
-        (with-current-buffer (get-buffer (paimon-search-job-buffer-name job))
+        (with-current-buffer (get-buffer (paimon-search-results-buffer-name profile))
           (aio-wait-for (paimon-search-results-next job))
           (should (equal 5 (oref (paimon-search-result-under-point) offset)))
           (goto-char (point-max))
@@ -66,10 +66,10 @@
   (paimon-test-with-db db
     (save-window-excursion
       (let* ((paimon-search-results-limit 5)
-             (_profile (closql-insert db (paimon-profile :default 1)))
+             (profile (closql-insert db (paimon-profile :default 1)))
              (job (aio-wait-for (paimon-search-create "index=_internal"))))
         (paimon-search-results-show job)
-        (with-current-buffer (get-buffer (paimon-search-job-buffer-name job))
+        (with-current-buffer (get-buffer (paimon-search-results-buffer-name profile))
           (aio-wait-for (paimon-search-results-next job))
           (aio-wait-for (paimon-search-results-next job))
           (aio-wait-for (paimon-search-results-previous job))

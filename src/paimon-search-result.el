@@ -34,8 +34,8 @@
 (require 'js)
 (require 'paimon-db)
 
-(defcustom paimon-search-result-buffer-name
-  "*paimon-search-result*"
+(defcustom paimon-search-result-buffer-template
+  "*paimon-search-result-%s*"
   "The search result buffer name."
   :group 'paimon
   :type 'string)
@@ -82,6 +82,10 @@
     :type (or null number)))
   "A class representing a search result.")
 
+(defun paimon-search-result-buffer-name (profile)
+  "Return the search result buffer name for PROFILE."
+  (format paimon-search-result-buffer-template (oref profile identity)))
+
 (defun paimon-search-result-by-id (db id)
   "Find the search result in DB by ID."
   (closql-get db id 'paimon-search-result))
@@ -93,6 +97,11 @@
       (if (stringp value)
           value
         (format "%s" (or value ""))))))
+
+(defun paimon-search-result-job (result)
+  "Return the job of the search RESULT."
+  (with-slots (job-id) result
+    (closql-get (closql--oref result 'closql-database) job-id 'paimon-search-job)))
 
 (defun paimon-search-result-under-point ()
   "Return the search result under point."
@@ -133,8 +142,10 @@
   "Show the search RESULT."
   (interactive (list (paimon-search-result-under-point)))
   (when result
-    (let ((buffer (get-buffer-create paimon-search-result-buffer-name)))
-      (unless (get-buffer-window paimon-search-result-buffer-name)
+    (let* ((job (paimon-search-result-job result))
+           (profile (paimon-search-job-profile job))
+           (buffer (get-buffer-create (paimon-search-result-buffer-name profile))))
+      (unless (get-buffer-window (buffer-name buffer))
         (let ((split-width-threshold nil))
           (display-buffer buffer)))
       (with-current-buffer buffer
