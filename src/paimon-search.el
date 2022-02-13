@@ -84,7 +84,7 @@
     (aio-with-async
       (message "Creating search job %s ..." (paimon--bold (oref job search)))
       (let ((job (aio-await (paimon-search-job-create job))))
-        (message "Search job %s created." (paimon--bold (oref job id)))
+        (message "Search job %s created. Waiting for results ..." (paimon--bold (oref job id)))
         (aio-await (paimon-search-jobs--manage-lifecycle job))))))
 
 (defun paimon-search--read-index (prompt initial-input history)
