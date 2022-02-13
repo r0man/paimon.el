@@ -71,7 +71,8 @@
          (earliest-time (transient-arg-value "--earliest-time=" args))
          (latest-time (transient-arg-value "--latest-time=" args))
          (search-level (transient-arg-value "--search-level=" args))
-         (indexes (paimon--transient-arg-multi-value "--indexes=" args))
+         ;; (indexes (paimon--transient-arg-multi-value "--indexes=" args))
+         (indexes (seq-remove #'null (list (transient-arg-value "--indexes=" args))))
          (profile (or paimon-search-jobs-profile (paimon-profile-current db)))
          (job (closql-insert db (paimon-search-job
                                  :earliest-time (or (paimon--parse-time earliest-time) (paimon-search-job-default-earliest-time))
@@ -90,7 +91,8 @@
 (defun paimon-search--read-index (prompt initial-input history)
   "Read the search index using PROMPT, INITIAL-INPUT and HISTORY."
   (let ((indexes (paimon-search--index-names (paimon-db) (paimon-profile-current))))
-    (completing-read-multiple prompt indexes nil nil initial-input history)))
+    ;; (completing-read-multiple prompt indexes nil nil initial-input history)
+    (completing-read prompt indexes nil nil initial-input history)))
 
 (transient-define-infix paimon-search--earliest-time ()
   :argument "--earliest-time="
@@ -104,7 +106,7 @@
   :class 'transient-option
   :description "The indexes to search in."
   :key "-i"
-  :multi-value t
+  ;; :multi-value t
   :reader #'paimon-search--read-index)
 
 (transient-define-infix paimon-search--latest-time ()
