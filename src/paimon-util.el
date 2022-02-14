@@ -131,14 +131,23 @@
          (progn ,@body)
        (paimon-api-error (paimon-with-errors--api-error ,error-sym)))))
 
+
 ;; Transient multi value
+
+(defun paimon-multi-value--value-match (re)
+  "Match the transient prefix value against RE."
+  (when-let ((match (cl-find-if (lambda (v)
+                                  (and (stringp v)
+                                       (string-match re v)))
+                                (oref transient--prefix value))))
+    (match-string 1 match)))
 
 (defclass paimon-multi-value (transient-option)
   ((multi-value :initarg :multi-value :initform t)))
 
 (cl-defmethod transient-init-value ((obj paimon-multi-value))
   "Set the initial value of the object OBJ."
-  (if-let (value (transient--value-match (format "\\`%s\\(.*\\)" (oref obj argument))))
+  (if-let (value (paimon-multi-value--value-match (format "\\`%s\\(.*\\)" (oref obj argument))))
       (oset obj value (s-split "," value))
     (oset obj value "")))
 
