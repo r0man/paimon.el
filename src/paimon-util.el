@@ -131,6 +131,30 @@
          (progn ,@body)
        (paimon-api-error (paimon-with-errors--api-error ,error-sym)))))
 
+;; Transient multi value
+
+(defclass paimon-multi-value (transient-option)
+  ((multi-value :initarg :multi-value :initform t)))
+
+(cl-defmethod transient-init-value ((obj paimon-multi-value))
+  "Set the initial value of the object OBJ."
+  (if-let (value (transient--value-match (format "\\`%s\\(.*\\)" (oref obj argument))))
+      (oset obj value (s-split "," value))
+    (oset obj value "")))
+
+(cl-defmethod transient-infix-value ((obj paimon-multi-value))
+  "Return (cons ARGUMENT VALUE) or nil.
+
+ARGUMENT and VALUE are the values of the respective slots of OBJ.
+If VALUE is nil, then return nil.  VALUE may be the empty string,
+which is not the same as nil."
+  ;; (message "transient-infix-value: %s" obj)
+  (when-let ((value (oref obj value)))
+    (concat (oref obj argument)
+            (if (oref obj multi-value)
+                (string-join value ",")
+              value))))
+
 (provide 'paimon-util)
 
 ;;; paimon-util.el ends here
