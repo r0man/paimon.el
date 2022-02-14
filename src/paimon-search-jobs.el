@@ -140,10 +140,11 @@
 
 (defun paimon-search-jobs--refresh-results (job)
   "Refresh the results of the search JOB."
-  (when-let (buffer (get-buffer (paimon-search-job-buffer-name job)))
-    (with-current-buffer buffer
-      (setq-local paimon-search-results-job job)
-      (paimon-search-results-mode))))
+  (let ((profile  (paimon-search-job-profile job)))
+    (when-let (buffer (get-buffer (paimon-search-results-buffer-name profile)))
+      (with-current-buffer buffer
+        (setq-local paimon-search-results-job job)
+        (paimon-search-results-mode)))))
 
 (aio-defun paimon-search-jobs--lifecycle-done (job)
   "Handle the life cycle of the search JOB when in the done state."
