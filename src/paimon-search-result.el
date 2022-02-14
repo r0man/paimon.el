@@ -138,26 +138,32 @@
                           (or offset paimon-search-results-offset)
                           query)))
 
+(defun paimon-search-result-render (result)
+  "Render the search RESULT."
+  (let* ((job (paimon-search-result-job result))
+         (profile (paimon-search-job-profile job)))
+    (with-current-buffer (get-buffer-create (paimon-search-result-buffer-name profile))
+      (let ((inhibit-read-only t))
+        (erase-buffer)
+        (condition-case error
+            (progn (json-insert (oref result data))
+                   (json-pretty-print-buffer))
+          (error (insert "/*\n\n WARNING: Can't render search result in JSON.\n\n")
+                 (insert (format " Error: %s\n\n %s\n*/\n\n" (car error) (pp-to-string (cdr error))))
+                 (insert (pp-to-string (oref result data)))))
+        (paimon-search-result-mode)
+        (goto-char (point-min))))))
+
 (defun paimon-search-result-show (result)
   "Show the search RESULT."
   (interactive (list (paimon-search-result-under-point)))
   (when result
     (let* ((job (paimon-search-result-job result))
            (profile (paimon-search-job-profile job))
-           (buffer (get-buffer-create (paimon-search-result-buffer-name profile))))
-      (unless (get-buffer-window (buffer-name buffer))
-        (let ((split-width-threshold nil))
-          (display-buffer buffer)))
-      (with-current-buffer buffer
-        (let ((inhibit-read-only t))
-          (erase-buffer)
-          (condition-case error
-              (progn (json-insert (oref result data))
-                     (json-pretty-print-buffer))
-            (error (insert "/*\n\n WARNING: Can't render search result in JSON.\n\n")
-                   (insert (format " Error: %s\n\n %s\n*/\n\n" (car error) (pp-to-string (cdr error))))
-                   (insert (pp-to-string (oref result data)))))
-          (paimon-search-result-mode))))))
+           (buffer (get-buffer-create (paimon-search-result-buffer-name profile)))
+           (split-width-threshold nil))
+      (switch-to-buffer-other-window buffer)
+      (paimon-search-result-render result))))
 
 (defvar paimon-search-result-mode-map
   (let ((map (make-sparse-keymap)))

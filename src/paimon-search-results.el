@@ -89,7 +89,7 @@ QUERY  - Run a SQL LIKE query on the data of the result."
   (forward-line n)
   (when (get-buffer-window (paimon-search-result-buffer-name (paimon-search-results--profile)))
     (when-let (result (paimon-search-result-under-point))
-      (paimon-search-result-show result))))
+      (paimon-search-result-render result))))
 
 (defun paimon-search-results-previous-line (&optional n)
   "Move cursor vertically up N lines and show the search result under point."
