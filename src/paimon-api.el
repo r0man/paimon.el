@@ -241,7 +241,9 @@
   (let ((content-type (paimon-api--response-content-type response))
         (body (request-response-data response)))
     (cond ((equal "application/json" content-type)
-           (json-parse-string body))
+           (if (fboundp 'json-parse-string)
+               (json-parse-string body)
+             (json-read-from-string body)))
           (t body))))
 
 (defun paimon-api--parse-exit-code (s)
