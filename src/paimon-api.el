@@ -312,21 +312,27 @@ DATA-TYPE - Specifies the type (\"all\"|\"event\"|\"metric\") of index."
                       :params `(("datatype" . ,data-type)
                                 ("output_mode" . "json"))))
 
-(cl-defun paimon-api-search-job-create (api search &key earliest-time latest-time search-level status-buckets)
+(cl-defun paimon-api-search-job-create (api search &key earliest-time latest-time offset search-level status-buckets sort-dir sort-mode summarize)
   "Create a search job.
 
   API The Splunk API.
   EARLIEST-TIME The earliest time of the search.
   LATEST-TIME The latest time of the search.
   SEARCH The search query."
-  (paimon-api-request api "services/search/jobs"
-                      :method "POST"
-                      :body `(("adhoc_search_level" . ,(or search-level "smart"))
-                              ("status_buckets" . ,status-buckets)
-                              ("earliest_time" . ,earliest-time)
-                              ("latest_time" . ,latest-time)
-                              ("output_mode" . "json")
-                              ("search" . ,search))))
+  (let ((sort-mode (when (stringp sort-mode) (string-replace "-" "_" sort-mode))))
+    (paimon-api-request
+     api "services/search/jobs"
+     :method "POST"
+     :body `(("adhoc_search_level" . ,(or search-level "smart"))
+             ("status_buckets" . ,status-buckets)
+             ("earliest_time" . ,earliest-time)
+             ("latest_time" . ,latest-time)
+             ("offset" . ,offset)
+             ("output_mode" . "json")
+             ("search" . ,search)
+             ("sort_dir" . ,sort-dir)
+             ("sort_mode" . ,sort-mode)
+             ("summarize" ,(if summarize "true" "false"))))))
 
 (defun paimon-api-search-job (api id)
   "Get a search job by ID from the Splunk API."
