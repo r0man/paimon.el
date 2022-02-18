@@ -89,7 +89,9 @@
 (defun paimon--pretty-print-json (object)
   "Pretty print the JSON OBJECT."
   (with-current-buffer (get-buffer-create "*json*")
-    (json-insert object)
+    (if (fboundp 'json-insert)
+        (json-insert object)
+      (insert (json-encode object)))
     (json-pretty-print-buffer)
     (js-mode)
     (switch-to-buffer-other-window (current-buffer))))
