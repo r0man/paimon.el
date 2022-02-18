@@ -96,21 +96,21 @@
 (transient-define-infix paimon-search--earliest-time ()
   :argument "--earliest-time="
   :class 'transient-option
-  :description "The earliest time bounds of the search."
+  :description "The earliest time of the search"
   :key "-e"
   :reader #'paimon--read-time)
 
 (transient-define-infix paimon-search--indexes ()
   :argument "--indexes="
   :class 'paimon-multi-value
-  :description "The indexes to search in."
+  :description "The indexes to search in"
   :choices (lambda (&rest _args) (paimon-search--index-names (paimon-db) (paimon-profile-current)))
   :key "-i")
 
 (transient-define-infix paimon-search--latest-time ()
   :argument "--latest-time="
   :class 'transient-option
-  :description "The latest time bounds of the search."
+  :description "The latest time of the search"
   :key "-l"
   :reader #'paimon--read-time)
 
@@ -118,15 +118,42 @@
   :argument "--search-level="
   :class 'transient-option
   :choices '("fast" "smart" "verbose")
-  :description "The search level to use."
+  :description "The search level to use"
   :key "-L")
 
 (transient-define-infix paimon-search--status-buckets ()
   :argument "--status-buckets="
   :class 'transient-option
-  :description "The number of status buckets to generate."
+  :description "The number of status buckets to generate"
   :key "-b"
   :reader 'transient-read-number-N0)
+
+(transient-define-infix paimon-search--offset ()
+  :argument "--offset="
+  :class 'transient-option
+  :description "The index of the first item to return"
+  :key "-o"
+  :reader 'transient-read-number-N0)
+
+(transient-define-infix paimon-search--sort-dir ()
+  :argument "--sort-dir="
+  :class 'transient-option
+  :choices '("asc" "desc")
+  :description "The sort order of the results"
+  :key "-s")
+
+(transient-define-infix paimon-search--sort-mode ()
+  :argument "--sort-mode="
+  :class 'transient-option
+  :choices '("auto" "alpha" "alpha-case" "num")
+  :description "The collated ordering"
+  :key "-M")
+
+(transient-define-infix paimon-search--summarize ()
+  :argument "--summarize"
+  :class 'transient-switch
+  :description "Whether to return a summarized result"
+  :key "-S")
 
 (defun paimon-search--description ()
   "Return the description of the `paimon-search' transient command."
@@ -138,19 +165,25 @@
             (when profile
               (propertize (format " - %s" (paimon-profile-identity profile)) 'face 'transient-inactive-argument))
             "\n\n "
-            (propertize command 'face 'transient-inactive-argument) "\n\n"
-            (propertize "Options" 'face 'transient-heading))))
+            (propertize command 'face 'transient-inactive-argument) "\n")))
 
 ;;;###autoload
 (transient-define-prefix paimon-search (query)
   "Create a Splunk search job for QUERY."
   [:description
    paimon-search--description
+   "Time"
    (paimon-search--earliest-time)
-   (paimon-search--indexes)
    (paimon-search--latest-time)
+   "\nSort"
+   (paimon-search--offset)
+   (paimon-search--sort-dir)
+   (paimon-search--sort-mode)
+   "\nOther"
+   (paimon-search--indexes)
    (paimon-search--search-level)
-   (paimon-search--status-buckets)]
+   (paimon-search--status-buckets)
+   (paimon-search--summarize)]
   ["Actions"
    ("c" "Create search job" paimon-search-create)]
   (interactive (list (read-string "Search: " nil 'paimon-search-history)))
