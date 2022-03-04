@@ -167,7 +167,7 @@
             "\n\n "
             (propertize command 'face 'transient-inactive-argument) "\n")))
 
-;;;###autoload
+;;;###autoload (autoload 'paimon-search "paimon-search" nil t)
 (transient-define-prefix paimon-search (query)
   "Create a Splunk search job for QUERY."
   [:description
