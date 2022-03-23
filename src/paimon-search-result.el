@@ -175,7 +175,9 @@
 
 (define-derived-mode paimon-search-result-mode js-mode "Search Result"
   "Special mode for search result buffers."
-  (read-only-mode))
+  (read-only-mode)
+  (when (fboundp 'evil-set-initial-state)
+    (evil-set-initial-state 'paimon-search-result-mode 'emacs)))
 
 (provide 'paimon-search-result)
 

@@ -211,6 +211,8 @@ QUERY  - Run a SQL LIKE query on the data of the result."
          (layout (or paimon-search-results-layout-selected (paimon-search-results-layout-find job))))
     (cl-check-type job paimon-search-job)
     (hl-line-mode 1)
+    (when (fboundp 'evil-set-initial-state)
+      (evil-set-initial-state 'paimon-search-results-mode 'emacs))
     (paimon-search-results--setup-list job layout)
     (add-hook 'post-command-hook #'paimon-search-results-post-command-hook nil t)))
 

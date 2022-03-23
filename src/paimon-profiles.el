@@ -147,7 +147,9 @@
   (setq tabulated-list-format paimon-profiles-list-format)
   (setq tabulated-list-sort-key paimon-profiles-list-sort-key)
   (tabulated-list-init-header)
-  (tabulated-list-print))
+  (tabulated-list-print)
+  (when (fboundp 'evil-set-initial-state)
+    (evil-set-initial-state 'paimon-profiles-mode 'emacs)))
 
 ;;;###autoload
 (defun paimon-profiles-list ()
