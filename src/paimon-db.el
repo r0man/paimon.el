@@ -200,6 +200,7 @@ https://nullprogram.com/blog/2014/02/06/."
       (emacsql (paimon-db) (apply #'format sql args))
     (apply #'emacsql (paimon-db) sql args)))
 
+;;;###autoload
 (defun paimon-db-reset ()
   "Reset the current database."
   (interactive)
