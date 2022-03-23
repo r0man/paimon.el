@@ -271,6 +271,8 @@
   (tabulated-list-init-header)
   (tabulated-list-print)
   (hl-line-mode 1)
+  (when (fboundp 'evil-set-initial-state)
+    (evil-set-initial-state 'paimon-search-jobs-mode 'emacs))
   (paimon-search-jobs--manage-lifecycles (paimon-search-jobs (paimon-db))))
 
 (defun paimon-search-jobs-list (profile)
