@@ -71,7 +71,8 @@
   (ignore layout)
   (when-let (max-lengths (paimon-search-job-max-field-lengths job))
     (let ((max-lengths (ht<-alist max-lengths)))
-      (thread-last (seq-take (paimon-search-job-field-names job) 10)
+      (thread-last
+        (seq-take (paimon-search-job-field-names job) 10)
         (seq-map (lambda (field)
                    (let ((max-length (ht-get max-lengths field)))
                      (paimon-search-results-layout--format-entry field max-length))))

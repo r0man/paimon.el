@@ -39,7 +39,8 @@
 (defun paimon--human-name (s)
   "Return the human name of S."
   (when s
-    (thread-last (format "%s" s)
+    (thread-last
+      (format "%s" s)
       (replace-regexp-in-string "[_-]" " ")
       (string-trim)
       (s-titleize))))
@@ -104,35 +105,29 @@
 
 (defun paimon--transient-arg-multi-value (arg args)
   "Return the value of the multi value ARG as it appears in ARGS."
-  (thread-last args
+  (thread-last
+    args
     (seq-filter (lambda (x) (and (listp x) (equal arg (car x)))))
     (seq-first)
     (seq-rest)))
 
 (defun paimon--transient-suffix-by-argument (argument suffixes)
   "Find the option `transient-option' in SUFFIXES by ARGUMENT."
-  (thread-last suffixes
+  (thread-last
+    suffixes
     (seq-filter (lambda (obj)
                   (and (cl-typep obj 'transient-option)
                        (equal argument (oref obj argument)))))
     (seq-first)))
-
-(defun paimon-with-errors--api-error (api-error)
-  "Handle the API-ERROR."
-  (let ((response (cdr api-error)))
-    (user-error "Splunk API error: HTTP %s, Reason: %s"
-                (plist-get response :status)
-                (when-let (messages (ht-get (plist-get response :body) "messages"))
-                  (when-let (message (elt messages 0))
-                    (ht-get message "text"))))))
 
 (defmacro paimon-with-errors (&rest body)
   "Evaluate BODY and handle errors."
   (let ((error-sym (gensym "error")))
     `(condition-case ,error-sym
          (progn ,@body)
-       (paimon-api-error (paimon-with-errors--api-error ,error-sym)))))
-
+       (error
+        (message (concat (format "%s" (or (cadr ,error-sym) (car ,error-sym)))))
+        ,error-sym))))
 
 ;; Transient multi value
 

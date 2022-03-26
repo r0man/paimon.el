@@ -85,7 +85,7 @@
 (defun paimon-search-jobs-list-entry-dispatch-state (job)
   "Return the tabulated list entry dispatch state for JOB."
   (or (paimon-search-job-dispatch-state job)
-      (if (oref job id) "CREATED" "CREATING")))
+      (if (paimon-search-job-sid job) "CREATED" "n/a")))
 
 (defun paimon-search-jobs-list-entry-event-count (job)
   "Return the tabulated list entry event count for JOB."
@@ -110,12 +110,13 @@
 (defun paimon-search-jobs-list-entry (job)
   "Convert the search JOB into a tabulated list entry."
   (list (paimon-search-job-id job)
-        (thread-last (list (paimon-search-jobs-list-entry-created-at job)
-                           (paimon-search-jobs-list-entry-earliest-time job)
-                           (paimon-search-jobs-list-entry-latest-time job)
-                           (paimon-search-jobs-list-entry-dispatch-state job)
-                           (paimon-search-jobs-list-entry-event-count job)
-                           (paimon-search-jobs-list-entry-search job))
+        (thread-last
+          (list (paimon-search-jobs-list-entry-created-at job)
+                (paimon-search-jobs-list-entry-earliest-time job)
+                (paimon-search-jobs-list-entry-latest-time job)
+                (paimon-search-jobs-list-entry-dispatch-state job)
+                (paimon-search-jobs-list-entry-event-count job)
+                (paimon-search-jobs-list-entry-search job))
           (seq-map (lambda (s) (paimon-search-jobs-list--apply-face job s)))
           (apply #'vector ))))
 
@@ -202,7 +203,8 @@
 
 (defun paimon-search-jobs--manage-lifecycles (jobs)
   "Manage the life cycle of the search JOBS."
-  (thread-last jobs
+  (thread-last
+    jobs
     (seq-filter #'paimon-search-jobs--manage-lifecycle-p)
     (seq-map #'paimon-search-jobs--manage-lifecycle)))
 

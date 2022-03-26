@@ -97,9 +97,10 @@
 (defun paimon-profile-current (&optional db)
   "Return the current profile from DB or setup a new one."
   (let ((db (or db (paimon-db))))
-    (or (thread-last (paimon-db-sql [:select [*] :from profile :where (= default 1)])
-                     (seq-map (lambda (row) (closql--remake-instance 'paimon-profile db row)))
-                     (seq-first))
+    (or (thread-last
+          (paimon-db-sql [:select [*] :from profile :where (= default 1)])
+          (seq-map (lambda (row) (closql--remake-instance 'paimon-profile db row)))
+          (seq-first))
         (paimon-profile-setup db))))
 
 (defun paimon-profile-by-id (db id)
