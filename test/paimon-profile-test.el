@@ -35,7 +35,12 @@
 
 (ert-deftest paimon-profile-current-test ()
   (paimon-test-with-db db
-    (should (null (paimon-profile-current db)))
+    (let ((done (gensym)))
+      (cl-letf (((symbol-function 'paimon-profile-setup)
+                 (lambda (arg)
+                   (should (equal db arg))
+                   done)))
+        (should (equal done (paimon-profile-current db)))))
     (let ((profile-1 (paimon-profile-set-default (closql-insert db (paimon-profile)))))
       (should (equal profile-1 (paimon-profile-current db)))
       (let ((profile-2 (paimon-profile-set-default (closql-insert db (paimon-profile)))))
