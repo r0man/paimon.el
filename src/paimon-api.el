@@ -30,6 +30,7 @@
 (require 'aio)
 (require 'cl-lib)
 (require 'eieio)
+(require 'ht)
 (require 'request)
 (require 's)
 (require 'seq)
@@ -251,27 +252,56 @@
   (when-let (matches (s-match ".*exited abnormally with code \\([[:digit:]]+\\).*" s))
     (string-to-number (nth 1 matches))))
 
-(defun paimon-api--handle-response-success (response)
-  "Handle a successful RESPONSE."
+(defun paimon-api--response-plist (response)
+  "Convert the RESPONSE object into a plist."
   (list :body (paimon-api--response-body response)
         :headers (request-response-headers response)
         :status (request-response-status-code response)))
 
+(defun paimon-api--response-error-messages (response)
+  "Return the error messages of the RESPONSE."
+  (let ((body (plist-get response :body)))
+    (when (ht-p body) (ht-get body "messages"))))
+
+(defun paimon-api--response-http-error-message (response)
+  "Return the HTTP error messages of the RESPONSE."
+  (when (plist-get response :status)
+    (let ((message (seq-first (paimon-api--response-error-messages response))))
+      (when (ht-p message)
+        (format "Splunk API %s.  %s"
+                (downcase (ht-get message "type" "error"))
+                (paimon--bold (ht-get message "text")))))))
+
+(defun paimon-api--response-curl-error-message (response)
+  "Return the Curl error message for RESPONSE."
+  (unless (request-response-status-code response)
+    (let* ((thrown-error (request-response-error-thrown response))
+           (exit-code (paimon-api--parse-exit-code (cdr thrown-error)))
+           (description (cdr (assoc exit-code paimon-curl-errors))))
+      (when description (format "Splunk API error. %s" description)))))
+
+(defun paimon-api-error-message (response)
+  "Return the Splunk API error message of the RESPONSE."
+  (when-let (message (seq-first (paimon-api--response-error-messages response)))
+    (when (ht-p message)
+      (format "Splunk API %s.  %s"
+              (downcase (ht-get message "type" "error"))
+              (ht-get message "text")))))
+
 (defun paimon-api--handle-response-error (response)
   "Handle an error RESPONSE."
-  (let* ((thrown-error (request-response-error-thrown response))
-         (exit-code (paimon-api--parse-exit-code (cdr thrown-error)))
-         (description (cdr (assoc exit-code paimon-curl-errors))))
-    (user-error "Splunk API error: %s" description)))
+  (if (request-response-status-code response)
+      (paimon-api--response-plist response)
+    (user-error (paimon-api--response-curl-error-message response))))
 
 (defun paimon-api--handle-response (response)
   "Handle the HTTP RESPONSE."
   (pcase (request-response-symbol-status response)
-    ('abort (user-error "Splunk API error: Abort"))
+    ('abort (user-error "Splunk API error. Request aborted"))
     ('error (paimon-api--handle-response-error response))
-    ('parse-error (user-error "Splunk API error: Parse error"))
-    ('success (paimon-api--handle-response-success response))
-    ('timeout (user-error "Splunk API error: Timeout"))))
+    ('parse-error (user-error "Splunk API error. Can't parse HTTP response"))
+    ('success (paimon-api--response-plist response))
+    ('timeout (user-error "Splunk API error. Request timed out"))))
 
 (defun paimon-api--search-job-path (id &rest rest)
   "Return the search job URL path for ID, appended by REST."

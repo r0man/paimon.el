@@ -103,7 +103,7 @@
                     (ht-get (plist-get response :body) "entry")))
       (401 (message "Warning: Can't load data indexes because you are not authenticated.") nil)
       (403 (message "Warning: Can't load data indexes because you are not authorized.") nil)
-      (_ (user-error "Can't load data indexes: %s" (plist-get response :body))))))
+      (_ (user-error "Can't load data indexes: %s" (paimon-api-error-message response))))))
 
 (aio-defun paimon-data-indexes-synchronize (db profile)
   "Synchronize the data indexes in DB with PROFILE."

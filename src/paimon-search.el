@@ -52,13 +52,15 @@
 
 (defun paimon-search--index-names->command (indexes)
   "Format the INDEXES for use in a search command."
-  (thread-last indexes
+  (thread-last
+    indexes
     (seq-map (lambda (index) (format "index=%s" index)))
     (s-join " OR ")))
 
 (cl-defun paimon-search--search-command (query &key indexes)
   "Return the search command for QUERY and INDEXES."
-  (thread-last (list "search" (paimon-search--index-names->command indexes) query)
+  (thread-last
+    (list "search" (paimon-search--index-names->command indexes) query)
     (seq-remove #'s-blank-p)
     (s-join " ")))
 
@@ -81,12 +83,14 @@
                                  :search (paimon-search--search-command query :indexes indexes)
                                  :search-level (or search-level "smart")))))
     (paimon-search-jobs-list profile)
-    (paimon-search-results-show job)
     (aio-with-async
-      (message "Creating search job %s ..." (paimon--bold (oref job search)))
-      (let ((job (aio-await (paimon-search-job-create job))))
-        (message "Search job %s created. Waiting for results ..." (paimon--bold (oref job id)))
-        (aio-await (paimon-search-jobs--manage-lifecycle job))))))
+      (with-slots (id search) job
+        (paimon-with-errors
+         (message "Creating search job %s ..." (paimon--bold search))
+         (let ((job (aio-await (paimon-search-job-create job))))
+           (message "Search job %s created. Waiting for results ..." (paimon--bold id))
+           (paimon-search-results-show job)
+           (aio-await (paimon-search-jobs--manage-lifecycle job))))))))
 
 (defun paimon-search--read-index (prompt initial-input history)
   "Read the search index using PROMPT, INITIAL-INPUT and HISTORY."

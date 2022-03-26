@@ -40,10 +40,7 @@
 (defun paimon ()
   "Show the search jobs of the current profile."
   (interactive)
-  (let ((db (paimon-db)))
-    (paimon-search-jobs-list
-     (or (paimon-profile-current db)
-         (paimon-profile-setup db)))))
+  (paimon-search-jobs-list (paimon-profile-current (paimon-db))))
 
 (provide 'paimon)
 

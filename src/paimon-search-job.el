@@ -192,7 +192,8 @@
 (defun paimon-search-job-max-field-lengths (job)
   "Return the maximum field lengths of the search JOB."
   (when-let (field-names (paimon-search-job-field-names job))
-    (thread-last (paimon-search-results-by-job job 0 100)
+    (thread-last
+      (paimon-search-results-by-job job 0 100)
       (seq-mapcat (lambda (result)
                     (seq-map (lambda (field-name)
                                (let ((value (ht-get (oref result data) field-name)))
@@ -226,7 +227,7 @@
       (pcase (plist-get response :status)
         (201 (setf sid (ht-get (plist-get response :body) "sid"))
              (closql-insert (closql--oref job 'closql-database) job t))
-        (_ (user-error "Can't create search job: %s" (plist-get response :body)))))))
+        (_ (user-error "Can't create search job.  %s" (paimon-api-error-message response)))))))
 
 (aio-defun paimon-search-job-synchronize (job)
   "Synchronize the search JOB with the Splunk API."
@@ -234,7 +235,10 @@
     (let ((response (aio-await (paimon-api-search-job (paimon-api-for job) sid))))
       (pcase (plist-get response :status)
         (200 (setf details (aref (ht-get (plist-get response :body) "entry") 0)) job)
-        (404 nil)))))
+        (404 nil)
+        (_ (user-error "Can't synchronize search job %s.  %s"
+                       (paimon--bold id)
+                       (paimon-api-error-message response)))))))
 
 (aio-defun paimon-search-job-control (job action)
   "Control the search JOB using ACTION."
@@ -242,10 +246,10 @@
     (let ((response (aio-await (paimon-api-search-job-control (paimon-api-for job) sid action))))
       (pcase (plist-get response :status)
         (200 (plist-get response :body))
-        (_ (message "Can't apply %s action to search job %s: %s"
-                    (paimon--bold action)
-                    (paimon--bold id)
-                    (plist-get response :body)))))))
+        (_ (user-error "Can't apply %s action to search job %s.  %s"
+                       (paimon--bold action)
+                       (paimon--bold id)
+                       (paimon-api-error-message response)))))))
 
 (defun paimon-search-job--parse-results (job response)
   "Parse the search results RESPONSE of the search JOB."
@@ -268,7 +272,9 @@
     (let ((response (aio-await (paimon-api-search-job-results (paimon-api-for job) sid :offset offset :count count))))
       (pcase (plist-get response :status)
         (200 (paimon-search-job--parse-results job (plist-get response :body)))
-        (_ (user-error "Can't load results for search job %s" (paimon--bold id)))))))
+        (_ (user-error "Can't load results for search job %s.  %s"
+                       (paimon--bold id)
+                       (paimon-api-error-message response)))))))
 
 (aio-defun paimon-search-job-get-results-preview (job &optional offset count)
   "Fetch the log lines of the search JOB using OFFSET and COUNT. "
@@ -276,7 +282,9 @@
     (let ((response (aio-await (paimon-api-search-job-preview-results (paimon-api-for job) sid :offset offset :count count))))
       (pcase (plist-get response :status)
         (200 (paimon-search-job--parse-results job (plist-get response :body)))
-        (_ (user-error "Can't load preview results for search job %s" (paimon--bold id)))))))
+        (_ (user-error "Can't load preview results for search job %s.  %s"
+                       (paimon--bold id)
+                       (paimon-api-error-message response)))))))
 
 (defun paimon-search-job--save-results (db results)
   "Save the JOB search RESULTS in DB."

@@ -55,7 +55,8 @@
 
 (defun paimon-test-auth-info-string (auth-info)
   "Encode AUTH-INFO into a string."
-  (thread-last auth-info
+  (thread-last
+    auth-info
     (seq-map (lambda (strings) (string-join strings " ")))
     (s-join "\n")))
 
