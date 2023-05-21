@@ -48,6 +48,7 @@
   (paimon-test-with-profile db profile
     (aio-wait-for (paimon-data-indexes-synchronize db profile))
     (should (equal '("_audit"
+                     "_configtracker"
                      "_internal"
                      "_introspection"
                      "_telemetry"
