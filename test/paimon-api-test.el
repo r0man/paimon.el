@@ -57,11 +57,14 @@
                  (paimon-api-authorization-tokens-url (paimon-api :hostname "example.com")))))
 
 (ert-deftest paimon-api-data-indexes-test ()
+  ;; This works locally, but fails on CI with SSL connect error. The SSL handshaking failed.
+  (skip-unless (not (getenv "CI")))
   (paimon-test-with-auth-info paimon-test-auth-info
     (let ((response (aio-wait-for (paimon-api-data-indexes paimon-test-api))))
       (should (equal 200 (plist-get response :status)))
       (should (hash-table-p (plist-get response :body)))
       (should (equal '("_audit"
+                       "_configtracker"
                        "_internal"
                        "_introspection"
                        "_telemetry"
