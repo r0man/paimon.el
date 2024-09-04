@@ -53,8 +53,11 @@
    ["machine" "localhost" "login" "paimon.el" "password" "87654321" "port" "8089"]]
   "Auth info used for testing.")
 
+(defvar paimon-test-db-filename
+  "/tmp/paimon-test-db.sqlite")
+
 (defclass paimon-test-database (paimon-database)
-  ((file :initform "/tmp/paimon-test-db.sqlite")))
+  ((file :initform 'paimon-test-db-filename)))
 
 (defun paimon-test-auth-info-string (auth-info)
   "Encode AUTH-INFO into a string."
@@ -79,14 +82,15 @@
   "Evaluate BODY with DB bound to a temporary database."
   (declare (indent 1))
   (let ((test-db-sym (gensym "db")))
-    `(let ((,test-db-sym (closql-db 'paimon-test-database)))
-       (cl-letf (((symbol-function 'paimon-db) (lambda () ,test-db-sym)))
-         (unwind-protect
-             (let ((,db ,test-db-sym))
-               ,@body)
-           (progn
-             (emacsql-close ,test-db-sym)
-             (delete-file (oref ,test-db-sym file))))))))
+    `(let* ((paimon-db-class 'paimon-test-database)
+            (,test-db-sym (closql-db paimon-db-class)))
+       (unwind-protect
+           (let ((,db ,test-db-sym))
+             ,@body)
+         (let ((,test-db-sym  (closql-db paimon-db-class t)))
+           (when (and ,test-db-sym (emacsql-live-p ,test-db-sym))
+             (emacsql-close ,test-db-sym))
+           (delete-file paimon-test-db-filename t))))))
 
 (defmacro paimon-test-with-profile (db profile &rest body)
   "Evaluate BODY with DB and PROFILE bound for a test."

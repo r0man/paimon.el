@@ -120,7 +120,7 @@
            (paimon-search-results-layout-format job layout)))
 
 (defun paimon-search-results-layout--supported-p (job layout results)
-  "Return t if the LAYOUT is supported by the RESULTS of the search JOB, otherwise nil."
+  "Return t if the LAYOUT is supported by the RESULTS of the JOB, otherwise nil."
   (let ((entry-fn (paimon-search-results-entry-fn job layout)))
     (seq-every-p (lambda (result) (funcall entry-fn result)) results)))
 

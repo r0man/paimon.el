@@ -31,13 +31,13 @@
 (require 'cl-lib)
 (require 'eieio)
 (require 'ht)
+(require 'paimon-util)
 (require 'request)
 (require 's)
 (require 'seq)
 (require 'subr-x)
 
-(define-error 'paimon-api-error
-  "Splunk API error")
+(define-error 'paimon-api-error "Splunk API error")
 
 (defvar paimon-api-search-job-actions
   '("cancel" "disablepreview" "enablepreview" "finalize" "pause" "setpriority" "setttl" "touch" "unpause")

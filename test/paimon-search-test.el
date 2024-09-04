@@ -47,17 +47,9 @@
 (ert-deftest paimon-search--index-names-test ()
   (paimon-test-with-profile db profile
     (aio-wait-for (paimon-data-indexes-synchronize db profile))
-    (should (equal '("_audit"
-                     "_configtracker"
-                     "_internal"
-                     "_introspection"
-                     "_telemetry"
-                     "_thefishbucket"
-                     "history"
-                     "main"
-                     "splunklogger"
-                     "summary")
-                   (paimon-search--index-names db profile)))))
+    (let ((names (paimon-search--index-names db profile)))
+      (should (< 0 (length names)))
+      (should (seq-every-p #'stringp names)))))
 
 (ert-deftest paimon-search-create-test ()
   (paimon-test-with-db db

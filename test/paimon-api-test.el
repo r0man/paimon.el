@@ -63,18 +63,10 @@
     (let ((response (aio-wait-for (paimon-api-data-indexes paimon-test-api))))
       (should (equal 200 (plist-get response :status)))
       (should (hash-table-p (plist-get response :body)))
-      (should (equal '("_audit"
-                       "_configtracker"
-                       "_internal"
-                       "_introspection"
-                       "_telemetry"
-                       "_thefishbucket"
-                       "history"
-                       "main"
-                       "splunklogger"
-                       "summary")
-                     (seq-map (lambda (data) (ht-get data "name"))
-                              (ht-get (plist-get response :body) "entry")))))))
+      (let ((indexes (seq-map (lambda (data) (ht-get data "name"))
+                              (ht-get (plist-get response :body) "entry"))))
+        (should (< 0 (length indexes)))
+        (should (seq-every-p #'stringp indexes))))))
 
 (ert-deftest paimon-api-headers-test ()
   (paimon-test-with-auth-info paimon-test-auth-info

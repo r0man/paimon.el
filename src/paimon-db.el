@@ -32,12 +32,13 @@
 (require 'emacsql)
 (require 'seq)
 
-(defvar paimon--db-table-schemata)
-
-(defconst paimon--db-version 7
-  "The latest version of the database.")
-
 ;;; Options
+
+(defcustom paimon-db-class 'paimon-database
+  "The Closql database class used by Paimon."
+  :package-version '(paimon . "0.2.0")
+  :group 'paimon
+  :type 'symbol)
 
 (defcustom paimon-db-filename
   (expand-file-name "paimon.el/db.sqlite"  user-emacs-directory)
@@ -51,15 +52,16 @@
 ;; (declare-function paimon-database--eieio-childp "paimon-db.el" (obj) t)
 
 (defclass paimon-database (closql-database)
-  ((name         :initform "Paimon")
-   ;; (object-class :initform 'paimon-repository)
-   (file         :initform 'paimon-db-filename)
-   (schemata     :initform 'paimon--db-table-schemata)
-   (version      :initform 7)))
+  ((name :initform "Paimon")
+   (object-class :initform 'paimon-profile)
+   (file :initform 'paimon-db-filename)
+   (schemata :initform 'paimon--db-table-schemata)
+   (version :initform 7)))
 
-(defun paimon-db ()
-  "Return the Paimon database."
-  (closql-db 'paimon-database))
+(defun paimon-db (&optional livep)
+  "Return the Paimon database using LIVEP."
+  (make-directory (file-name-parent-directory paimon-db-filename) t)
+  (closql-db paimon-db-class livep))
 
 ;;; Schemata
 
@@ -117,20 +119,13 @@
   "Create the indexes for the search results in DB."
   (emacsql db [:create :index search-result-index-job-id-offset :on search-result [job-id offset]]))
 
-(cl-defmethod closql--db-init ((db paimon-database))
+(cl-defmethod closql--db-create-schema ((db paimon-database))
   "Initialize the DB."
+  (cl-call-next-method)
   (emacsql-with-transaction db
-    (pcase-dolist (`(,table . ,schema) paimon--db-table-schemata)
-      (emacsql db [:create-table $i1 $S2] table schema))
     (paimon-db--create-profile-indexes db)
     (paimon-db--create-search-job-indexes db)
-    (paimon-db--create-search-result-indexes db)
-    (closql--db-set-version db paimon--db-version)))
-
-(defun paimon--db-maybe-update (db version)
-  "Update the DB schema to VERSION."
-  (emacsql-with-transaction db
-    version))
+    (paimon-db--create-search-result-indexes db)))
 
 ;;; Api
 
@@ -144,8 +139,10 @@
 (defun paimon-db-reset ()
   "Reset the current database."
   (interactive)
-  (delete-file paimon-db-filename)
-  (paimon-db))
+  (when-let (db (paimon-db t))
+    (emacsql-close db))
+  (delete-file paimon-db-filename t)
+  t)
 
 (provide 'paimon-db)
 ;;; paimon-db.el ends here
