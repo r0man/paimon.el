@@ -6,7 +6,7 @@
 ;; Homepage: https://github.com/r0man/paimon.el
 ;; Keywords: paimon, search, tools
 ;; Maintainer: r0man <roman@burningswell.com>
-;; Package-Requires: ((aio "1.0") (closql "20230520.1519") (emacs "28.1") (emacsql "20230417.1448") (f "0.20.0") (ht "2.4") (transient "0.3.7") (request "0.3.3"))
+;; Package-Requires: ((aio "1.0") (closql "2.0.0") (emacs "28.1") (emacsql "4.0.2") (f "0.20.0") (ht "2.4") (transient "0.7.5") (request "0.3.2") (compat "30.0.0.0"))
 ;; Package-Version: 0.1.6-git
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -31,6 +31,7 @@
 
 ;;; Code:
 
+(require 'compat)
 (require 'paimon-db)
 (require 'paimon-profiles)
 (require 'paimon-search)

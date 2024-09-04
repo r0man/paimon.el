@@ -120,7 +120,7 @@
     ("bearer" "Please enter the token for %u at Splunk API %h:%p")))
 
 (defun paimon-profile-secret (profile &optional create)
-  "Return the secret of the PROFILE from `auth-sources' using CREATE, or ask the user."
+  "Return the secret of the PROFILE from `auth-sources' using CREATE."
   (with-slots (hostname identity port) profile
     (let* ((auth-source-creation-prompts `((secret . ,(paimon-profile--secret-prompt profile))))
            (auth-source (car (auth-source-search

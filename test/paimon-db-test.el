@@ -35,7 +35,8 @@
 (require 'paimon-test)
 
 (ert-deftest paimon-db-reset-test ()
-  (paimon-test-with-db _db
+  (paimon-test-with-db db
+    (should db)
     (should (paimon-db-reset))))
 
 (ert-deftest paimon-db-insert-search-job-test ()

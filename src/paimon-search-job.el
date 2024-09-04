@@ -44,7 +44,7 @@
   "The number of minutes ago to use for the earliest search time.")
 
 (defun paimon-search-job-default-earliest-time ()
-  "Return the default earliest time, `paimon-search-job-earliest-time-seconds-ago` ago."
+  "Return the default earliest time."
   (time-add (current-time) (- paimon-search-job-earliest-time-seconds-ago)))
 
 (defclass paimon-search-job (closql-object)
@@ -267,7 +267,7 @@
       response)))
 
 (aio-defun paimon-search-job-get-results (job &optional offset count)
-  "Get the results of the search JOB using OFFSET and COUNT. "
+  "Get the results of the search JOB using OFFSET and COUNT."
   (with-slots (id sid) job
     (let ((response (aio-await (paimon-api-search-job-results (paimon-api-for job) sid :offset offset :count count))))
       (pcase (plist-get response :status)
@@ -277,7 +277,7 @@
                        (paimon-api-error-message response)))))))
 
 (aio-defun paimon-search-job-get-results-preview (job &optional offset count)
-  "Fetch the log lines of the search JOB using OFFSET and COUNT. "
+  "Fetch the log lines of the search JOB using OFFSET and COUNT."
   (with-slots (id sid) job
     (let ((response (aio-await (paimon-api-search-job-preview-results (paimon-api-for job) sid :offset offset :count count))))
       (pcase (plist-get response :status)

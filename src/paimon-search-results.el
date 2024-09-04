@@ -84,7 +84,9 @@ QUERY  - Run a SQL LIKE query on the data of the result."
     (paimon-search-job-profile job)))
 
 (defun paimon-search-results-next-line (&optional n)
-  "Move N lines forward (backward if N is negative) and show the search result under point."
+  "Move N lines forward (backward if N is negative).
+
+After moving the search result under point is shown."
   (interactive "P")
   (forward-line n)
   (when (get-buffer-window (paimon-search-result-buffer-name (paimon-search-results--profile)))
@@ -111,11 +113,11 @@ QUERY  - Run a SQL LIKE query on the data of the result."
             (paimon--bold (paimon-search-job-event-count job)))))
 
 (defun paimon-search-results--message-loading (job &optional offset limit)
-  "Display a message that results are loaded for the search JOB using OFFSET and LIMIT."
+  "Display a message that results are loaded for JOB using OFFSET and LIMIT."
   (message "Loading %s ..." (paimon-search-results--pagination-summary job offset limit)))
 
 (defun paimon-search-results--message-loaded (job &optional offset limit)
-  "Display a message that results are shown for the search JOB using OFFSET and LIMIT."
+  "Display a message that results are shown for JOB using OFFSET and LIMIT."
   (message "Showing %s." (paimon-search-results--pagination-summary job offset limit)))
 
 (aio-defun paimon-search-results-view (job &optional offset limit)

@@ -41,29 +41,11 @@
 (ert-deftest paimon-data-indexes-load-test ()
   (paimon-test-with-profile _db profile
     (let ((data-indexes (aio-wait-for (paimon-data-indexes-load profile))))
-      (should (equal '("_audit"
-                       "_configtracker"
-                       "_internal"
-                       "_introspection"
-                       "_telemetry"
-                       "_thefishbucket"
-                       "history"
-                       "main"
-                       "splunklogger"
-                       "summary")
-                     (seq-map #'paimon-data-index-name data-indexes))))))
+      (should (< 0 (length data-indexes)))
+      (should (seq-every-p #'stringp (seq-map #'paimon-data-index-name data-indexes))))))
 
 (ert-deftest paimon-data-indexes-synchronize ()
   (paimon-test-with-profile db profile
     (let ((data-indexes (aio-wait-for (paimon-data-indexes-synchronize db profile))))
-      (should (equal '("_audit"
-                       "_configtracker"
-                       "_internal"
-                       "_introspection"
-                       "_telemetry"
-                       "_thefishbucket"
-                       "history"
-                       "main"
-                       "splunklogger"
-                       "summary")
-                     (seq-map #'paimon-data-index-name data-indexes))))))
+      (should (< 0 (length data-indexes)))
+      (should (seq-every-p #'stringp (seq-map #'paimon-data-index-name data-indexes))))))

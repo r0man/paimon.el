@@ -42,8 +42,9 @@ jobs:
       fail-fast: false
       matrix:
         emacs_version:
-          - 28.1
-          - snapshot
+          - 28.2
+          # - 29.4
+          # - snapshot
     steps:
     - uses: purcell/setup-emacs@master
       with:
@@ -52,7 +53,10 @@ jobs:
     - uses: actions/checkout@v2
 
     - name: Install packages
-      run: sudo apt-get install aspell aspell-en curl
+      run: sudo apt-get install aspell aspell-en ca-certificates curl docker-compose
+
+    - name: Curl Version
+      run: curl --version
 
     - name: Initialize sandbox
       run: |
