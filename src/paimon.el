@@ -7,7 +7,7 @@
 ;; Keywords: paimon, search, tools
 ;; Maintainer: r0man <roman@burningswell.com>
 ;; Package-Requires: ((aio "1.0") (closql "2.0.0") (emacs "28.1") (emacsql "4.0.2") (f "0.20.0") (ht "2.4") (transient "0.7.5") (request "0.3.2") (compat "30.0.0.0"))
-;; Package-Version: 0.2.0
+;; Package-Version: 0.2.0-git
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 
 ;; This file is not part of GNU Emacs.
